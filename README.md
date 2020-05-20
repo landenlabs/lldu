@@ -1,61 +1,10 @@
 #lldu
-OSX / Linux / DOS  Json conversion of arrays to transposed columns in CSV format. 
+OSX / Linux / DOS  Directory (disk) used space inventory 
 
-LLJson parses json files and outputs them as a transposed set of CSV columns. 
+Count files and their size grouped by their file extension.
 
   [![Build status](https://travis-ci.org/landenlabs/lldu.svg?branch=master)](https://travis-ci.org/landenlabs/lldu)
   
-  
-This input json file:
-
-<pre>
-{
-  "quiz": {
-    "sport": {
-      "q1": {
-        "question": "Which one is correct team name in NBA?",
-        "options": [
-          "New York Bulls",
-          "Los Angeles Kings",
-          "Golden State Warriros",
-          "Huston Rocket"
-        ],
-        "answer": "Huston Rocket"
-      }
-    },
-    "maths": {
-      "q1": {
-        "question": "5 + 7 = ?",
-        "options": [
-          "10",
-          "11",
-          "12",
-          "13"
-        ],
-        "answer": "12"
-      },
-      "q2": {
-        "question": "12 - 8 = ?",
-        "options": [
-          "1",
-          "2",
-          "3",
-          "4"
-        ],
-        "answer": "4"
-      }
-    }
-  }
-}
-</pre>
-
-Is converted to CSV columns as:
-<pre>
-quiz.maths.q1.options, quiz.maths.q2.options, quiz.sport.q1.options
-"10", "1", "New York Bulls"
-"11", "2", "Los Angeles Kings"
-"12", "3", "Golden State Warriros"
-</pre>
 
 Visit home website
 
@@ -64,36 +13,27 @@ Visit home website
 
 Help Banner:
 <pre>
-lldu  Dennis Lang v1.1 (landenlabs.com) Dec 20 2019
+lldu  Dennis Lang v1.1 (LandenLabs.com) May 20 2020
 
-Des: Json parse and output as transposed CSV
+Des: Directory (disk) used space inventory
 Use: lldu [options] directories...   or  files
 
  Options (only first unique characters required, options can be repeated):
    -includefile=&lt;filePattern>
-   -excludefile=&lt;filePattern>
+   -excludefile=&ltfilePattern>
    -verbose
+   -pick=&ltfromPat>;&lttoStr>         ; Def: [^.]*[.](.+);$1
+   -format=&ltformat-3-values>       ; Def: %e	%c	%s\n
+        e=ext, c=count, s=size   
+   -header=&ltReportHeader>          ; Def: Ext\tCount\tSize\n 
 
  Example:
-   lldu -inc=*.json -ex=foo.json -ex=bar.json dir1/subdir dir2 file1.json file2.json
- Example input json:
-   {
-      "cloudCover": [
-        10,
-        30,
-        49
-      ],
-        "dayOfWeek": [
-        "Monday",
-        "Tuesday",
-        "Wednesday"
-      ]
-   }
+   lldu '-inc=*.bak' -ex=foo.json '-ex=*/subdir2' dir1/subdir dir2 *.txt file2.json
+   lldu '-exclude=\.*' '-pick=([^.]+)[.](.{4,});$1.other' .
 
-   Output transposed CSV
-    cloudCover,  dayOfWeek
-     10, Monday
-     30, Tuesday
-     49, WednesDay
+  Output:
+    Ext  Count  Size
+    ext1 count1 size1
+    ext2 count2 size2
 
 </pre>

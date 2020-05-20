@@ -427,18 +427,18 @@ void help(const char* arg0) {
     "   -excludefile=<filePattern>\n"
     "   -verbose\n"
     "   -pick=<fromPat>;<toStr>         ; Def: [^.]*[.](.+);$1 \n"
-    "   -format=<format-3-values>       ; Def: %e\t%c\t%s\\n \n"
-    "        e=ext, c=count, s=size"
-    "   -header=<header>                ; Def: Ext\tCount\tSize\\n \n"
+    "   -format=<format-3-values>       ; Def: %e\\t%c\\t%s\\n \n"
+    "        e=ext, c=count, s=size\n"
+    "   -header=<header>                ; Def: Ext\\tCount\\tSize\\n \n"
     "\n"
     " Example:\n"
     "   lldu '-inc=*.bak' -ex=foo.json '-ex=*/subdir2' dir1/subdir dir2 *.txt file2.json \n"
-    "   lldu '-exclude=\\.*' '-pick=([^.]+)[.](.{4,});$1.other' . \n"
+    "   lldu '-exclude=\\.*' '-pick=[^.]+[.](.{4,});other' . \n"
     "\n"
     "  Output:\n"
-    "  Ext  Count  Size\n"
-    "  ext1 count1 size1 \n"
-    "  ext2 count2 size2 \n"
+    "    Ext  Count  Size\n"
+    "    ext1 count1 size1 \n"
+    "    ext2 count2 size2 \n"
     "\n";
 }
 
@@ -448,6 +448,7 @@ int main(int argc, char* argv[])
     if (argc == 1)
     {
         help(argv[0]);
+        return 0;
     }
     else
     {
@@ -543,19 +544,19 @@ int main(int argc, char* argv[])
             if (fileDirList.size() == 1 && fileDirList[0] == "-") {
                 string filePath;
                 while (std::getline(std::cin, filePath)) {
-                    std::cerr << "File Matches=" << FindFiles(filePath) << std::endl;
+                    FindFiles(filePath);
                 }
             } else {
                 for (auto const& filePath : fileDirList)
                 {
-                    std::cerr << "File Matches=" << FindFiles(filePath) << std::endl;
+                    FindFiles(filePath);
                 }
             }
         } else {
-           help(argv[0]);
+            help(argv[0]);
+            std::cerr << std::endl;
+            return -1;
        }
-               
-        std::cerr << std::endl;
     }
     
     size_t totalCount = 0;
