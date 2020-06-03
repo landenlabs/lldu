@@ -32,7 +32,7 @@
 		B9B44DD21D8F661700782398 /* lstring.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lstring.h; sourceTree = "<group>"; };
 		B9B44DD31D8F661700782398 /* split.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = split.h; sourceTree = "<group>"; };
 		B9B44DD41D8F661700782398 /* SwapStream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SwapStream.h; sourceTree = "<group>"; };
-		B9D915FC2474432E00765556 /* Colors.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Colors.h; sourceTree = "<group>"; };
+		B9D915FC2474432E00765556 /* colors.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = colors.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,7 +65,7 @@
 		B9B44DBF1D8F65CD00782398 /* lldu */ = {
 			isa = PBXGroup;
 			children = (
-				B9D915FC2474432E00765556 /* Colors.h */,
+				B9D915FC2474432E00765556 /* colors.h */,
 				B9B44DCA1D8F661700782398 /* directory.cpp */,
 				B9B44DCB1D8F661700782398 /* directory.h */,
 				B9B44DCE1D8F661700782398 /* lldu.cpp */,

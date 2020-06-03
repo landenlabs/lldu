@@ -54,6 +54,7 @@
 #include "ll_stdhdr.h"
 #include "directory.h"
 #include "split.h"
+#include "colors.h"
 
 
 using namespace std;
@@ -81,6 +82,7 @@ static uint optionErrCnt = 0;
 static uint patternErrCnt = 0;
 
 struct DuInfo {
+    std::string ext;
     size_t count;
     size_t diskSize;
     DuInfo() : count(0), diskSize(0) {}
@@ -89,9 +91,16 @@ struct DuInfo {
 typedef std::map<std::string, DuInfo> DuList;
 DuList duList;
 
+typedef bool (*SortBy)(const DuInfo& lhs,const DuInfo& rhs);
+bool SortByExt(const DuInfo& lhs,const DuInfo& rhs)  { return (lhs.ext < rhs.ext);}
+bool SortByCount (const DuInfo& lhs,const DuInfo& rhs)  { return (lhs.count < rhs.count);}
+bool SortBySize(const DuInfo& lhs,const DuInfo& rhs)   { return (lhs.diskSize < rhs.diskSize);}
+SortBy sortBy = SortByExt;
+
 std::string separator = "\t";
 std::string format = "%8.8e\t%8c\t%10s\n";        // %s\t%8d\t%10d\n";
-std::string header = "Ext\tCount\tSize\n";
+std::string header = "     Ext\t   Count\t      Size\n";
+
 
 #ifdef WIN32
 const char SLASH_CHAR('\\');
@@ -176,6 +185,7 @@ bool ExamineFile(const lstring& filepath, const lstring& filename)
     }
     
     DuInfo& duInfo = duList[ext];
+    duInfo.ext = ext;
     duInfo.count++;
     duInfo.diskSize += filestat.st_size;
     
@@ -299,6 +309,17 @@ void addPicker(const char* replaceArg)
 }
 
 // ---------------------------------------------------------------------------
+void setSortBy(const char* value)
+{
+    sortBy = SortByExt;
+    if (strncasecmp("count", value, strlen(value)) == 0) {
+        sortBy = SortByCount;
+    } else if (strncasecmp("size", value, strlen(value)) == 0) {
+        sortBy = SortBySize;
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Convert special characters from text to binary.
 static const char* convertSpecialChar(const char* inPtr)
 {
@@ -418,28 +439,31 @@ void printParts(
 
 // ---------------------------------------------------------------------------
 void help(const char* arg0) {
-    cerr << "\n" << arg0 << "  Dennis Lang v1.1 (LandenLabs.com) " __DATE__ << "\n"
-    << "\nDes: Directory (disk) used space inventory \n"
-    "Use: lldu [options] directories...   or  files\n"
+    const char* helpMsg = "  Dennis Lang v1.2 (LandenLabs.com)_X_ " __DATE__ "\n\n"
+    "_p_Des: Directory (disk) used space inventory \n"
+    "_p_Use: lldu [options] directories...   or  files\n"
     "\n"
-    " Options (only first unique characters required, options can be repeated):\n"
-    "   -includefile=<filePattern>\n"
-    "   -excludefile=<filePattern>\n"
-    "   -verbose\n"
-    "   -pick=<fromPat>;<toStr>         ; Def: [^.]*[.](.+);$1 \n"
-    "   -format=<format-3-values>       ; Def: %e\\t%c\\t%s\\n \n"
+    " _p_Options (only first unique characters required, options can be repeated):\n"
+    "   -_y_includefile=<filePattern>\n"
+    "   -_y_excludefile=<filePattern>\n"
+    "   -_y_verbose\n"
+    "   -_y_pick=<fromPat>;<toStr>         ; Def: [^.]*[.](.+);$1 \n"
+    "   -_y_format=<format-3-values>       ; Def: %8.8e\\t%8c\\t%10s\\n \n"
     "        e=ext, c=count, s=size\n"
-    "   -header=<header>                ; Def: Ext\\tCount\\tSize\\n \n"
+    "   -_y_sort=ext|count|size            ; Def: ext \n"
+    "   -_y_header=<header>                ; Def: Ext\\tCount\\tSize\\n \n"
     "\n"
-    " Example:\n"
-    "   lldu '-inc=*.bak' -ex=foo.json '-ex=*/subdir2' dir1/subdir dir2 *.txt file2.json \n"
-    "   lldu '-exclude=\\.*' '-pick=[^.]+[.](.{4,});other' . \n"
+    " _p_Example:\n"
+    "   lldu '-_y_inc=*.bak' -_y_ex=foo.json '-_y_ex=*/subdir2' dir1/subdir dir2 *.txt file2.json \n"
+    "   lldu '-_y_exclude=\\.*' '-_y_pick=[^.]+[.](.{4,});other' . \n"
     "\n"
-    "  Output:\n"
+    " _p_Output:\n"
     "    Ext  Count  Size\n"
     "    ext1 count1 size1 \n"
     "    ext2 count2 size2 \n"
+    "    Total count size \n"
     "\n";
+    std::cerr << Colors::colorize("\n_W_") << arg0 << Colors::colorize(helpMsg);
 }
 
 // ---------------------------------------------------------------------------
@@ -502,12 +526,14 @@ int main(int argc, char* argv[])
                             }
                             break;
                         case 's':   // separator=<str>
-                            if (ValidOption("separator", cmd+1))
+                            if (ValidOption("separator", cmd+1, false))
                             {
                                 separator = convertSpecialChar(value);
+                            } else if (ValidOption("sort", cmd+1)) {
+                                setSortBy(value);
                             }
                             break;
-                            
+
                         default:
                             std::cerr << "Unknown command " << cmd << std::endl;
                             optionErrCnt++;
@@ -518,6 +544,17 @@ int main(int argc, char* argv[])
                         case 'v':   // -v=true or -v=anyThing
                             verbose = true;
                             continue;
+                            
+                        case 'h':
+                            if (ValidOption("help", "")) {
+                                help(argv[0]);
+                                return 0;
+                            }
+                            break;
+                            
+                        case '?':
+                            help(argv[0]);
+                            return 0;
                     }
                     
                     if (endCmds == argv[argn]) {
@@ -562,17 +599,25 @@ int main(int argc, char* argv[])
     size_t totalCount = 0;
     size_t totalSize = 0;
     
-    DuList::const_iterator iter;
+    
 
-    printf(header.c_str());
-    for (iter= duList.cbegin(); iter != duList.cend(); iter++) {
+    puts(header.c_str());
+    
+    typedef std::vector<DuInfo> VecDuList;
+    VecDuList::const_iterator iter;
+    VecDuList vecDuList;
+    for (const auto &info : duList)
+        vecDuList.push_back(info.second);
+    
+    std::sort(vecDuList.begin(), vecDuList.end(), *sortBy);
+    for (auto iter= vecDuList.cbegin(); iter != vecDuList.cend(); iter++) {
         if (format.length() > 0) {
-            printParts(format.c_str(), iter->first.c_str(), iter->second.count, iter->second.diskSize);
+            printParts(format.c_str(), iter->ext.c_str(), iter->count, iter->diskSize);
         } else {
             // std::cout << iter->first << separator << iter->second.count << separator << iter->second.diskSize << std::endl;
         }
-        totalCount += iter->second.count;
-        totalSize += iter->second.diskSize;
+        totalCount += iter->count;
+        totalSize += iter->diskSize;
     }
     if (format.length() > 0) {
         printParts(format.c_str(), "Total", totalCount, totalSize);
