@@ -91,15 +91,29 @@ struct DuInfo {
 typedef std::map<std::string, DuInfo> DuList;
 DuList duList;
 
-typedef bool (*SortBy)(const DuInfo& lhs,const DuInfo& rhs);
-bool SortByExt(const DuInfo& lhs,const DuInfo& rhs)  { return (lhs.ext < rhs.ext);}
-bool SortByCount (const DuInfo& lhs,const DuInfo& rhs)  { return (lhs.count < rhs.count);}
-bool SortBySize(const DuInfo& lhs,const DuInfo& rhs)   { return (lhs.diskSize < rhs.diskSize);}
-SortBy sortBy = SortByExt;
+typedef int (*SortByFunc)(const DuInfo& lhs,const DuInfo& rhs);
+struct SortBy {
+    SortBy(SortBy* _nextSort, SortByFunc _sortFunc, bool _forward) :
+        nextSort(_nextSort), sortFunc(_sortFunc), forward(_forward)
+    {}
+    SortBy* nextSort;
+    SortByFunc sortFunc;
+    bool forward;
+    bool operator()(DuInfo& lhs, DuInfo& rhs) {
+        int cmp = sortFunc(lhs, rhs);
+        return (cmp==0) ? ((nextSort==nullptr) ? false : (*nextSort)(lhs,rhs)) : (forward == cmp<0);
+    }
+};
+int SortByExt(const DuInfo& lhs,const DuInfo& rhs)  { return (lhs.ext.compare(rhs.ext));}
+int SortByCount (const DuInfo& lhs,const DuInfo& rhs)  { return (lhs.count - rhs.count);}
+int SortBySize(const DuInfo& lhs,const DuInfo& rhs)   { return (lhs.diskSize - rhs.diskSize);}
+SortBy* sortBy = new SortBy(nullptr, SortByExt, true);
 
 std::string separator = "\t";
 std::string format = "%8.8e\t%8c\t%10s\n";        // %s\t%8d\t%10d\n";
 std::string header = "     Ext\t   Count\t      Size\n";
+std::string tformat = format;
+int setBothFmt = 0;
 
 
 #ifdef WIN32
@@ -309,13 +323,14 @@ void addPicker(const char* replaceArg)
 }
 
 // ---------------------------------------------------------------------------
-void setSortBy(const char* value)
+void setSortBy(const char* value, bool forward)
 {
-    sortBy = SortByExt;
     if (strncasecmp("count", value, strlen(value)) == 0) {
-        sortBy = SortByCount;
+        sortBy = new SortBy(sortBy, SortByCount, forward);
     } else if (strncasecmp("size", value, strlen(value)) == 0) {
-        sortBy = SortBySize;
+        sortBy = new SortBy(sortBy, SortBySize, forward);
+    } else {
+        sortBy = new SortBy(sortBy, SortByExt, forward);
     }
 }
 
@@ -451,11 +466,14 @@ void help(const char* arg0) {
     "   -_y_format=<format-3-values>       ; Def: %8.8e\\t%8c\\t%10s\\n \n"
     "        e=ext, c=count, s=size\n"
     "   -_y_sort=ext|count|size            ; Def: ext \n"
+    "   -_y_reverse=ext|count|size         ; Reverse sort \n"
     "   -_y_header=<header>                ; Def: Ext\\tCount\\tSize\\n \n"
     "\n"
     " _p_Example:\n"
     "   lldu '-_y_inc=*.bak' -_y_ex=foo.json '-_y_ex=*/subdir2' dir1/subdir dir2 *.txt file2.json \n"
     "   lldu '-_y_exclude=\\.*' '-_y_pick=[^.]+[.](.{4,});other' . \n"
+    "   lldu '-_y_exclude=\\.*' '-_y_pick=[^.]+[.](.{4,});other' -_y_sort=size -_y_rev=count . \n"
+    "   lldu  -rev=size -rev=count '-format=%8e %6c %10s\\n' '-for=\\n' '-head= ' . \n"
     "\n"
     " _p_Output:\n"
     "    Ext  Count  Size\n"
@@ -516,7 +534,10 @@ int main(int argc, char* argv[])
                         case 'f':   // format=<str>
                             if (ValidOption("format", cmd+1))
                             {
-                                format = convertSpecialChar(value);
+                                if (setBothFmt++ == 0)
+                                    tformat = format = convertSpecialChar(value);
+                                else
+                                    tformat = convertSpecialChar(value);
                             }
                             break;
                         case 'h':   // header=<str>
@@ -525,12 +546,18 @@ int main(int argc, char* argv[])
                                 header = convertSpecialChar(value);
                             }
                             break;
-                        case 's':   // separator=<str>
+                        case 's':
                             if (ValidOption("separator", cmd+1, false))
                             {
                                 separator = convertSpecialChar(value);
                             } else if (ValidOption("sort", cmd+1)) {
-                                setSortBy(value);
+                                setSortBy(value, true);
+                            }
+                            break;
+                        case 'r':
+                            if (ValidOption("reverse", cmd+1))
+                            {
+                                setSortBy(value, false);
                             }
                             break;
 
@@ -619,8 +646,8 @@ int main(int argc, char* argv[])
         totalCount += iter->count;
         totalSize += iter->diskSize;
     }
-    if (format.length() > 0) {
-        printParts(format.c_str(), "Total", totalCount, totalSize);
+    if (tformat.length() > 0) {
+        printParts(tformat.c_str(), "Total", totalCount, totalSize);
     } else {
         // std::cout << iter->first << separator << iter->second.count << separator << iter->second.diskSize << std::endl;
     }
