@@ -85,7 +85,8 @@ struct DuInfo {
     std::string ext;
     size_t count;
     size_t diskSize;
-    DuInfo() : count(0), diskSize(0) {}
+    size_t hardlinks;
+    DuInfo() : count(0), diskSize(0), hardlinks(0) {}
 };
 
 typedef std::map<std::string, DuInfo> DuList;
@@ -201,6 +202,8 @@ bool ExamineFile(const lstring& filepath, const lstring& filename)
     DuInfo& duInfo = duList[ext];
     duInfo.ext = ext;
     duInfo.count++;
+    if (filestat.st_nlink > 1)
+        duInfo.hardlinks++;
     duInfo.diskSize += filestat.st_size;
     
     return false;
@@ -402,6 +405,7 @@ void printParts(
         const char* customFmt,
         const char* name,
         size_t count,
+        size_t links,
         size_t size)
 {
     // Handle custom printf syntax to get to path parts:
@@ -439,6 +443,10 @@ void printParts(
                     itemFmt += "lu";    // unsigned long formatter
                     printf(itemFmt, count);
                     break;
+                case 'l':   // Links
+                    itemFmt += "lu";    // unsigned long formatter
+                    printf(itemFmt, links);
+                    break;
                 case 's':   // Size
                     itemFmt += "lu";    // unsigned long formatter
                     printf(itemFmt, size);
@@ -454,7 +462,7 @@ void printParts(
 
 // ---------------------------------------------------------------------------
 void help(const char* arg0) {
-    const char* helpMsg = "  Dennis Lang v1.2 (LandenLabs.com)_X_ " __DATE__ "\n\n"
+    const char* helpMsg = "  Dennis Lang v1.3 (LandenLabs.com)_X_ " __DATE__ "\n\n"
     "_p_Des: Directory (disk) used space inventory \n"
     "_p_Use: lldu [options] directories...   or  files\n"
     "\n"
@@ -464,7 +472,7 @@ void help(const char* arg0) {
     "   -_y_verbose\n"
     "   -_y_pick=<fromPat>;<toStr>         ; Def: [^.]*[.](.+);$1 \n"
     "   -_y_format=<format-3-values>       ; Def: %8.8e\\t%8c\\t%10s\\n \n"
-    "        e=ext, c=count, s=size\n"
+    "        e=ext, c=count, l=links, s=size\n"
     "   -_y_sort=ext|count|size            ; Def: ext \n"
     "   -_y_reverse=ext|count|size         ; Reverse sort \n"
     "   -_y_header=<header>                ; Def: Ext\\tCount\\tSize\\n \n"
@@ -624,8 +632,8 @@ int main(int argc, char* argv[])
     }
     
     size_t totalCount = 0;
+    size_t totalLinks = 0;
     size_t totalSize = 0;
-    
     
 
     puts(header.c_str());
@@ -639,15 +647,16 @@ int main(int argc, char* argv[])
     std::sort(vecDuList.begin(), vecDuList.end(), *sortBy);
     for (auto iter= vecDuList.cbegin(); iter != vecDuList.cend(); iter++) {
         if (format.length() > 0) {
-            printParts(format.c_str(), iter->ext.c_str(), iter->count, iter->diskSize);
+            printParts(format.c_str(), iter->ext.c_str(), iter->count, iter->hardlinks, iter->diskSize);
         } else {
             // std::cout << iter->first << separator << iter->second.count << separator << iter->second.diskSize << std::endl;
         }
         totalCount += iter->count;
+        totalLinks += iter->hardlinks;
         totalSize += iter->diskSize;
     }
     if (tformat.length() > 0) {
-        printParts(tformat.c_str(), "Total", totalCount, totalSize);
+        printParts(tformat.c_str(), "Total", totalCount, totalLinks, totalSize);
     } else {
         // std::cout << iter->first << separator << iter->second.count << separator << iter->second.diskSize << std::endl;
     }
