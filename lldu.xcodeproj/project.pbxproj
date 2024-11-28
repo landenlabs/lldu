@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9AB236B82CF8D201007446E8 /* parseutil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9AB236B72CF8D201007446E8 /* parseutil.cpp */; };
 		B9B44DD71D8F661700782398 /* directory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B9B44DCA1D8F661700782398 /* directory.cpp */; };
 		B9B44DD81D8F661700782398 /* lldu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B9B44DCE1D8F661700782398 /* lldu.cpp */; };
 /* End PBXBuildFile section */
@@ -24,15 +25,14 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		B90D545C27E697FE00114FD4 /* comma.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = comma.hpp; sourceTree = "<group>"; };
+		9AB236B62CF8D201007446E8 /* parseutil.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = parseutil.hpp; sourceTree = "<group>"; };
+		9AB236B72CF8D201007446E8 /* parseutil.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = parseutil.cpp; sourceTree = "<group>"; };
 		B9B44DBD1D8F65CD00782398 /* lldu */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = lldu; sourceTree = BUILT_PRODUCTS_DIR; };
 		B9B44DCA1D8F661700782398 /* directory.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = directory.cpp; sourceTree = "<group>"; };
 		B9B44DCB1D8F661700782398 /* directory.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = directory.hpp; sourceTree = "<group>"; };
 		B9B44DCE1D8F661700782398 /* lldu.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = lldu.cpp; sourceTree = "<group>"; };
 		B9B44DD11D8F661700782398 /* ll_stdhdr.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ll_stdhdr.hpp; sourceTree = "<group>"; };
 		B9B44DD21D8F661700782398 /* lstring.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = lstring.hpp; sourceTree = "<group>"; };
-		B9B44DD31D8F661700782398 /* split.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = split.hpp; sourceTree = "<group>"; };
-		B9D915FC2474432E00765556 /* colors.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = colors.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,14 +65,13 @@
 		B9B44DBF1D8F65CD00782398 /* lldu */ = {
 			isa = PBXGroup;
 			children = (
-				B90D545C27E697FE00114FD4 /* comma.hpp */,
-				B9D915FC2474432E00765556 /* colors.hpp */,
+				9AB236B62CF8D201007446E8 /* parseutil.hpp */,
+				9AB236B72CF8D201007446E8 /* parseutil.cpp */,
 				B9B44DCA1D8F661700782398 /* directory.cpp */,
 				B9B44DCB1D8F661700782398 /* directory.hpp */,
 				B9B44DCE1D8F661700782398 /* lldu.cpp */,
 				B9B44DD11D8F661700782398 /* ll_stdhdr.hpp */,
 				B9B44DD21D8F661700782398 /* lstring.hpp */,
-				B9B44DD31D8F661700782398 /* split.hpp */,
 			);
 			path = lldu;
 			sourceTree = "<group>";
@@ -135,6 +134,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9AB236B82CF8D201007446E8 /* parseutil.cpp in Sources */,
 				B9B44DD81D8F661700782398 /* lldu.cpp in Sources */,
 				B9B44DD71D8F661700782398 /* directory.cpp in Sources */,
 			);

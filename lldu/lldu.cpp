@@ -4,10 +4,6 @@
 //
 //  Directory (disk) used space
 //
-//  TODO -
-//    * Add option to do tree comparison
-//       lldu -compare  dir1 dir2
-//
 //-------------------------------------------------------------------------------------------------
 //
 // Author: Dennis Lang - 2024
@@ -43,9 +39,7 @@
 // Project files
 #include "ll_stdhdr.hpp"
 #include "directory.hpp"
-#include "split.hpp"
-#include "colors.hpp"
-#include "comma.hpp"
+#include "parseutil.hpp"
 
 #include <assert.h>
 #include <stdio.h>
@@ -84,6 +78,7 @@ static PatternList excludeDirPatList;
 static PickPatList pickPatList;
 static StringList fileDirList;
 
+// static ParseUtil parser;
 static lstring tableType = "count";
 static bool isTable = false;        // -table=count|size|hardlink
 
@@ -292,23 +287,6 @@ size_t FindFiles(const lstring& dirname, unsigned depth) {
 }
 
 //-------------------------------------------------------------------------------------------------
-// Return compiled regular expression from text.
-static
-std::regex getRegEx(const char* value) {
-    try {
-        std::string valueStr(value);
-        return std::regex(valueStr);
-        // return std::regex(valueStr, regex_constants::icase);
-    } catch (const std::regex_error& regEx) {
-        std::cerr << regEx.what() << ", Pattern=" << value << std::endl;
-    }
-
-    patternErrCnt++;
-    return std::regex("");
-}
-
-
-//-------------------------------------------------------------------------------------------------
 // replace=<fromPat>;<toText>
 static
 void addPicker(const char* replaceArg) {
@@ -335,188 +313,6 @@ void setSortBy(const char* value, bool forward) {
     }
 }
 
-//-------------------------------------------------------------------------------------------------
-// Convert special characters from text to binary.
-static
-const char* convertSpecialChar(const char* inPtr) {
-    uint len = 0;
-    int x, n, scnt;
-    const char* begPtr = inPtr;
-    char* outPtr = (char*)inPtr;
-    while (*inPtr) {
-        if (*inPtr == '\\') {
-            inPtr++;
-            switch (*inPtr) {
-            case 'n': *outPtr++ = '\n'; break;
-            case 't': *outPtr++ = '\t'; break;
-            case 'v': *outPtr++ = '\v'; break;
-            case 'b': *outPtr++ = '\b'; break;
-            case 'r': *outPtr++ = '\r'; break;
-            case 'f': *outPtr++ = '\f'; break;
-            case 'a': *outPtr++ = '\a'; break;
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-                scnt = sscanf(inPtr, "%3o%n", &x, &n);  // "\010" octal sets x=8 and n=3 (characters)
-                assert(scnt == 1);
-                inPtr += n - 1;
-                *outPtr++ = (char)x;
-                break;
-            case 'x':                                // hexadecimal
-                scnt = sscanf(inPtr + 1, "%2x%n", &x, &n);  // "\1c" hex sets x=28 and n=2 (characters)
-                assert(scnt == 1);
-                if (n > 0) {
-                    inPtr += n;
-                    *outPtr++ = (char)x;
-                    break;
-                }
-            // seep through
-            default:
-                throw( "Warning: unrecognized escape sequence" );
-            case '\\':
-            case '\?':
-            case '\'':
-            case '\"':
-                *outPtr++ = *inPtr;
-                break;
-            }
-            inPtr++;
-        } else
-            *outPtr++ = *inPtr++;
-        len++;
-    }
-
-    *outPtr = '\0';
-    return begPtr;
-}
-
-#if 0
-// ---------------------------------------------------------------------------
-const char* fmtNumComma(size_t n, char*& buf) {
-    char* result = buf;
-    /*
-     // if n is signed value.
-    if (n < 0) {
-        *buf++ = "-";
-        return printfcomma(-n, buf);
-    }
-    */
-    if (n < 1000) {
-        buf += snprintf((char*)buf, 4, "%lu", (unsigned long)n);
-        return result;
-    }
-    fmtNumComma(n / 1000, buf);
-    buf += snprintf((char*)buf, 5, ",%03lu", (unsigned long) n % 1000);
-    return result;
-}
-
-// Legacy ?windows? way of adding commas
-char buf[40];
-printf("%s", fmtNumComma(value, buf));
-#endif
-
-/*
-#if defined(__APPLE__) && defined(__MACH__)
-#include <printf.h>
-#define PRINTF(a,b) xprintf(domain, NULL, a,b)
-#else
-#define PRINTF(a,b) printf(a,b)
-#endif
-*/
-
-//-------------------------------------------------------------------------------------------------
-void printParts(
-    const char* customFmt,
-    const char* name,
-    size_t count,
-    size_t links,
-    size_t size) {
-    /*
-    #if defined(__APPLE__) && defined(__MACH__)
-        printf_domain_t domain = new_printf_domain();
-        setlocale(LC_ALL, "en_US.UTF-8");
-    #endif
-     */
-    initPrintf();
-
-    // Handle custom printf syntax to get to path parts:
-    //    %#.#s
-    //   n=name c=count, s=size
-
-    const int NONE = 12345;
-    lstring itemFmt;
-#ifdef HAVE_WIN
-    const char* FMT_NUM = "lu";
-#else
-    const char* FMT_NUM = "'lu";  //  "`lu" linux supports ` to add commas
-#endif
- 
-    char* fmt = (char*)customFmt;
-    while (*fmt) {
-        char c = *fmt;
-        if (c != '%') {
-            putchar(c);
-            fmt++;
-        } else {
-            const char* begFmt = fmt;
-            int precision = NONE;
-            int width = (int)strtol(fmt + 1, &fmt, 10);
-            if (*fmt == '.') {
-                precision = (int)strtol(fmt + 1, &fmt, 10);
-            }
-            c = *fmt;
-
-            itemFmt = begFmt;
-            itemFmt.resize(fmt - begFmt);
-            EnableCommaCout();
-
-            switch (c) {
-            case 'e':   // Extension
-            case 'n':   // name
-                itemFmt += "s";
-                printf(itemFmt, name);
-                break;
-            case 'C':   // Count
-                // DisableCommaCout();
-                itemFmt += "lu";        // unsigned long formatter
-                printf(itemFmt, count); // print with commas
-                break;
-            case 'c':   // Count
-                itemFmt += FMT_NUM;       // unsigned long formatter
-                PRINTF(itemFmt, count); // print with commas
-                break;
-            case 'L':   // Links
-                // DisableCommaCout();
-                itemFmt += "lu";        // unsigned long formatter
-                printf(itemFmt, links);
-                break;
-            case 'l':   // Links
-                itemFmt += FMT_NUM;       // unsigned long formatter
-                PRINTF(itemFmt, links);
-                break;
-            case 'S':   // Size
-                // DisableCommaCout();
-                itemFmt += "lu";       // unsigned long formatter
-                printf(itemFmt, size);
-                break;
-            case 's':   // Size
-                itemFmt += FMT_NUM;       // unsigned long formatter
-                PRINTF(itemFmt, size);
-                break;
-
-            default:
-                putchar(c);
-                break;
-            }
-            fmt++;
-        }
-    }
-}
 
 //-------------------------------------------------------------------------------------------------
 void showHelp(const char* arg0) {
@@ -576,44 +372,11 @@ void showHelp(const char* arg0) {
     // std::cerr << " FormatSummary=" << sformat << std::endl;
 }
 
-// ---------------------------------------------------------------------------
-void showUnknown(const char* argStr) {
-    std::cerr << Colors::colorize("Use -h for help.\n_Y_Unknown option _R_") << argStr << Colors::colorize("_X_\n");
-    optionErrCnt++;
-}
-
-//-------------------------------------------------------------------------------------------------
-// Validate option matchs and optionally report problem to user.
-static
-bool ValidOption(const char* validCmd, const char* possibleCmd, bool reportErr = true) {
-    // Starts with validCmd else mark error
-    size_t validLen = strlen(validCmd);
-    size_t possibleLen = strlen(possibleCmd);
-
-    if ( strncasecmp(validCmd, possibleCmd, std::min(validLen, possibleLen)) == 0)
-        return true;
-
-    if (reportErr) {
-        std::cerr << Colors::colorize("_R_Unknown option:'")  << possibleCmd << "', expect:'" << validCmd << Colors::colorize("'_X_\n");
-        optionErrCnt++;
-    }
-    return false;
-}
-
-//-------------------------------------------------------------------------------------------------
-bool ValidPattern(PatternList& outList, lstring& value, const char* validCmd, const char* possibleCmd, bool reportErr = true) {
-    bool isOk = ValidOption(validCmd, possibleCmd, reportErr);
-    if (isOk)  {
-        ReplaceAll(value, "*", ".*");
-        ReplaceAll(value, "?", ".");
-        outList.push_back(getRegEx(value));
-        return true;
-    }
-    return isOk;
-}
-
 //-------------------------------------------------------------------------------------------------
 int main(int argc, char* argv[]) {
+    
+    ParseUtil parser;
+    
     if (argc == 1) {
         showHelp(argv[0]);
         return 0;
@@ -634,77 +397,77 @@ int main(int argc, char* argv[]) {
                     
                     switch (*cmdName) {
                         case 'd': // depth=0..n
-                            if (ValidOption("depth", cmdName))  {
+                            if (parser.validOption("depth", cmdName))  {
                                 maxDepth = atoi(value);
                             }
                             break;
                         case 'e':   // excludeFile=<pat>
-                            ValidPattern(excludeFilePatList, value, "excludeFile", cmdName);
+                            parser.validPattern(excludeFilePatList, value, "excludeFile", cmdName);
                             break;
                         case 'E':   // ExcludeDir=<pat>
-                            ValidPattern(excludeDirPatList, value, "ExcludeDir", cmdName);
+                            parser.validPattern(excludeDirPatList, value, "ExcludeDir", cmdName);
                             break;
                         case 'f':   // format=<str>
-                            if (ValidOption("format", cmdName)) {
+                            if (parser.validOption("format", cmdName)) {
                                 if (setBothFmt++ == 0)
-                                    tformat = format = convertSpecialChar(value);
+                                    tformat = format = ParseUtil::convertSpecialChar(value);
                                 else
-                                    tformat = convertSpecialChar(value);
+                                    tformat = ParseUtil::convertSpecialChar(value);
                             }
                             break;
                         case 'F':
-                             if (ValidOption("Formatsummary", cmdName)) {
-                                sformat = convertSpecialChar(value);
+                             if (parser.validOption("Formatsummary", cmdName)) {
+                                sformat = ParseUtil::convertSpecialChar(value);
                             }
                             break;
                         case 'h':   // header=<str>
-                            if (ValidOption("header", cmdName)) {
-                                header = convertSpecialChar(value);
+                            if (parser.validOption("header", cmdName)) {
+                                header = ParseUtil::convertSpecialChar(value);
                             }
                             break;
                         case 'i':   // includeFile=<pat>
-                            ValidPattern(includeFilePatList, value, "includeFile", cmdName);
+                            parser.validPattern(includeFilePatList, value, "includeFile", cmdName);
                             break;
                         case 'I':   // IncludeDir=<pat>
-                            ValidPattern(includeDirPatList, value, "includeDir", cmdName);
+                            parser.validPattern(includeDirPatList, value, "includeDir", cmdName);
                             break;
                         case 'p': // pick=<fromPat>;<toText>
-                            if (ValidOption("pick", cmdName)) {
-                                addPicker(convertSpecialChar(value));
+                            if (parser.validOption("pick", cmdName)) {
+                                addPicker(ParseUtil::convertSpecialChar(value));
                             }
                             break;
                         case 'r':
-                            if (ValidOption("reverse", cmdName)) {
+                            if (parser.validOption("reverse", cmdName)) {
                                 setSortBy(value, false);
                             }
                             break;
                         case 's':
-                            if (ValidOption("separator", cmdName, false)) {
-                                separator = convertSpecialChar(value);
-                            } else if (ValidOption("sort", cmdName)) {
+                            if (parser.validOption("separator", cmdName, false)) {
+                                separator = ParseUtil::convertSpecialChar(value);
+                            } else if (parser.validOption("sort", cmdName)) {
                                 setSortBy(value, true);
                             }
                             break;
                         case 't':   // table=count|size|hardlinks
-                            if (ValidOption("table", cmdName)) {
+                            if (parser.validOption("table", cmdName)) {
                                 tableType = value;
                                 isTable = true;
                             }
                             break;
                         default:
-                            showUnknown(argStr);
+                            parser.showUnknown(argStr);
                             break;
                     }
                 } else {
                     const char* cmdName = argStr + 1;
                     switch (argStr[1]) {
                     case 'd':
-                        if (ValidOption("divide", cmdName)) {
+                        if (parser.validOption("divide", cmdName)) {
                             divByHardlink = true;
                         }
                         break;
                     case 'h':
-                        if (ValidOption("help", cmdName)) {
+                        if (parser.validOption("help", cmdName)) {
                             showHelp(argv[0]);
                             return 0;
                         }
@@ -713,22 +476,22 @@ int main(int argc, char* argv[]) {
                         dryrun = true;
                         break;
                     case 'p':   // -progress
-                        if (ValidOption("progress", cmdName)) {
+                        if (parser.validOption("progress", cmdName)) {
                             progress = true;
                         }
                         break;
                     case 's':   // -summary
-                        if (ValidOption("summary", cmdName)) {
+                        if (parser.validOption("summary", cmdName)) {
                             summary = true;
                         }
                         break;;
                     case 't':   // -total
-                        if (ValidOption("total", cmdName)) {
+                        if (parser.validOption("total", cmdName)) {
                             total = true;
                         }
                         break;
                     case 'v':   // -v=true or -v=anyThing
-                        if (ValidOption("verbose", cmdName)) {
+                        if (parser.validOption("verbose", cmdName)) {
                             verbose = true;
                         }
                         break;
@@ -736,7 +499,7 @@ int main(int argc, char* argv[]) {
                         showHelp(argv[0]);
                         return 0;
                     default:
-                        showUnknown(argStr);
+                        parser.showUnknown(argStr);
                     }
 
                     if (endCmds == argv[argn]) {
@@ -832,7 +595,7 @@ void printUsage(const std::string& filepath) {
     for (auto iter = vecDuList.cbegin(); iter != vecDuList.cend(); iter++) {
         if (! summary && ! total) {
             if (format.length() > 0) {
-                printParts(format.c_str(), iter->ext.c_str(), iter->count, iter->hardlinks, iter->diskSize);
+                ParseUtil::printParts(format.c_str(), iter->ext.c_str(), iter->count, iter->hardlinks, iter->diskSize);
             } else {
                 // std::cout << iter->first << separator << iter->second.count << separator << iter->second.diskSize << std::endl;
             }
@@ -850,16 +613,16 @@ void printUsage(const std::string& filepath) {
 
     if (summary) {
         if (filepath.empty()) {
-            printParts(sformat.c_str(), "_GTotal", gtotalCount, gtotalLinks, gtotalFileSize);
+            ParseUtil::printParts(sformat.c_str(), "_GTotal", gtotalCount, gtotalLinks, gtotalFileSize);
         } else {
-            printParts(sformat.c_str(), filepath.c_str(), totalCount, totalLinks, totalFileSize);
+            ParseUtil::printParts(sformat.c_str(), filepath.c_str(), totalCount, totalLinks, totalFileSize);
         }
     } else {
         if (tformat.length() > 0) {
             if (filepath.empty())
-                printParts(tformat.c_str(), "_GTotal", gtotalCount, gtotalLinks, gtotalFileSize);
+                ParseUtil::printParts(tformat.c_str(), "_GTotal", gtotalCount, gtotalLinks, gtotalFileSize);
             else
-                printParts(tformat.c_str(), "_Total", totalCount, totalLinks, totalFileSize);
+                ParseUtil::printParts(tformat.c_str(), "_Total", totalCount, totalLinks, totalFileSize);
         } else {
             // std::cout << iter->first << separator << iter->second.count << separator << iter->second.diskSize << std::endl;
         }

@@ -1,17 +1,19 @@
 //-------------------------------------------------------------------------------------------------
+// File: parseutil.hpp
+// Author: Dennis Lang
 //
-// File: Colors.hpp   Author: Dennis Lang  Desc: Terminal colors
+// Desc: Parsing utility functions.
 //
 //-------------------------------------------------------------------------------------------------
 //
-// Author: Dennis Lang - 2020
+// Author: Dennis Lang - 2024
 // http://landenlabs.com
 //
-// This file is part of llcsv project.
+// This file is part of lldupdir project.
 //
 // ----- License ----
 //
-// Copyright (c) 2020 Dennis Lang
+// Copyright (c) 2024  Dennis Lang
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,12 +32,95 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#pragma once
+#include "ll_stdhdr.hpp"
 
 #include <regex>
-#include <string>
+typedef std::vector<std::regex> PatternList;
 
-using namespace std;
+
+//-------------------------------------------------------------------------------------------------
+class ParseUtil {
+    
+public:
+    unsigned optionErrCnt = 0;
+    unsigned patternErrCnt = 0;
+    
+    void showUnknown(const char* argStr);
+    std::regex getRegEx(const char* value);
+ 
+    bool validOption(const char* validCmd, const char* possibleCmd, bool reportErr = true);
+    bool validPattern(PatternList& outList, lstring& value, const char* validCmd, const char* possibleCmd, bool reportErr = true);
+ 
+    bool validFile(fstream& stream, int mode, const lstring& value, const char* validCmd, const char* possibleCmd, bool reportErr = true);
+    
+    
+    static
+    const char* convertSpecialChar(const char* inPtr);
+    
+    static
+    lstring& getParts(
+            lstring& outPart,
+            const char* partSelector,
+            const char* name,
+            const char* ext,
+            unsigned num );
+    
+    static
+    void  printParts(
+        const char* partFmt,
+        const char* name,
+        size_t count,
+        size_t links,
+        size_t size);
+};
+
+//-------------------------------------------------------------------------------------------------
+#define NOMINMAX
+#include <vector>
+#include <limits>
+
+#undef max
+
+// Split string into parts.
+class Split : public std::vector<lstring> {
+public:
+    typedef size_t(*Find_of)(const lstring& str, const char* delimList, size_t begIdx);
+
+    Split(const lstring& str, const char* delimList, Find_of find_of) {
+        size_t lastPos = 0;
+        // size_t pos = str.find_first_of(delimList);
+        size_t pos = (*find_of)(str, delimList, 0);
+
+        while (pos != lstring::npos) {
+            if (pos != lastPos)
+                push_back(str.substr(lastPos, pos - lastPos));
+            lastPos = pos + 1;
+            // pos = str.find_first_of(delimList, lastPos);
+            pos = (*find_of)(str, delimList, lastPos);
+        }
+        if (lastPos < str.length())
+            push_back(str.substr(lastPos, pos - lastPos));
+    }
+
+    static size_t Find(const lstring& str, const char* delimList, size_t begIdx) {
+        return strcspn(str+begIdx, delimList);
+    }
+
+    Split(const lstring& str, const char* delimList, int maxSplit = std::numeric_limits<int>::max()) {
+        size_t lastPos = 0;
+        size_t pos = str.find_first_of(delimList);
+
+        while (pos != lstring::npos && --maxSplit > 0) {
+            if (pos != lastPos)
+                push_back(str.substr(lastPos, pos - lastPos));
+            lastPos = pos + 1;
+            pos = str.find_first_of(delimList, lastPos);
+        }
+        if (lastPos < str.length())
+            push_back(str.substr(lastPos, (maxSplit == 0) ? str.length() : pos - lastPos));
+    }
+};
+
 
 //-------------------------------------------------------------------------------------------------
 // Replace using regular expression
@@ -98,5 +183,4 @@ public:
         return str;
     }
 };
-
 
