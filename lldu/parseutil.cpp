@@ -7,7 +7,7 @@
 //-------------------------------------------------------------------------------------------------
 //
 // Author: Dennis Lang - 2024
-// http://landenlabs.com
+// https://landenlabs.com
 //
 // This file is part of lldupdir project.
 //
