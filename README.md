@@ -8,7 +8,7 @@ Count files and their size grouped by their file extension.
 
 Visit home website
 
-[http://landenlabs.com](http://landenlabs.com)
+[https://landenlabs.com](https://landenlabs.com)
 
 
 Help Banner:

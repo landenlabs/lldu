@@ -239,7 +239,7 @@ size_t FindFile(const lstring& fullname) {
     return fileCount;
 }
 
-//--------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 // Recurse over directories, locate files.
 static
 size_t FindFiles(const lstring& dirname, unsigned depth) {
