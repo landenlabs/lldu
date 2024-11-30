@@ -1,20 +1,21 @@
 @echo off
 
-@echo Copy Release to d:\opt\bin
+set prog=lldu
+cd %prog%-ms
 
-cd lldu-ms
+@echo Clean up remove x64
+rmdir /s  x64
 
-echo "Clean up remove x64"
-lr -rfq x64
-echo "Build release target"
-F:\opt\VisualStudio\2022\Preview\Common7\IDE\devenv.exe lldu.sln /Build  "Release|x64"
+@echo.
+@echo Build release target
+F:\opt\VisualStudio\2022\Preview\Common7\IDE\devenv.exe %prog%.sln /Build  "Release|x64"
 cd ..
 
-copy lldu-ms\x64\Release\lldu.exe d:\opt\bin\lldu.exe
+@echo Copy Release to d:\opt\bin
+copy %prog%-ms\x64\Release\%prog%.exe d:\opt\bin\%prog%.exe
 
-
-@echo
+@echo.
 @echo Compare md5 hash
-cmp -h lldu-ms\x64\Release\lldu.exe d:\opt\bin\lldu.exe
-ld -a d:\opt\bin\lldu.exe
+cmp -h %prog%-ms\x64\Release\%prog%.exe d:\opt\bin\%prog%.exe
+ld -a d:\opt\bin\%prog%.exe
 
