@@ -5,9 +5,9 @@
 //-------------------------------------------------------------------------------------------------
 //
 // Author: Dennis Lang - 2024
-// https://landenlabs.com
+// http://landenlabs.com
 //
-// This file is part of lljson project.
+// This file is part of lldu project.
 //
 // ----- License ----
 //
