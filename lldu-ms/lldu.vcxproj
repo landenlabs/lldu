@@ -21,14 +21,13 @@
   <ItemGroup>
     <ClCompile Include="..\lldu\directory.cpp" />
     <ClCompile Include="..\lldu\lldu.cpp" />
+    <ClCompile Include="..\lldu\parseutil.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\lldu\colors.hpp" />
-    <ClInclude Include="..\lldu\comma.hpp" />
     <ClInclude Include="..\lldu\directory.hpp" />
     <ClInclude Include="..\lldu\ll_stdhdr.hpp" />
     <ClInclude Include="..\lldu\lstring.hpp" />
-    <ClInclude Include="..\lldu\split.hpp" />
+    <ClInclude Include="..\lldu\parseutil.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

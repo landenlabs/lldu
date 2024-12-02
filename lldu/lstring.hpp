@@ -34,6 +34,7 @@
 
 
 #include <string>
+#include <algorithm>
 
 // Enhanced string class
 class lstring : public std::string {
@@ -86,6 +87,16 @@ public:
         this->assign(rhs);
         return *this;
     }
+    
+    lstring& toLower() {
+        transform(begin(), end(), begin(),::tolower);
+        return *this;
+    }
+    lstring& toUpper() {
+        transform(begin(), end(), begin(),::toupper);
+        return *this;
+    }
+
 };
 
 
@@ -96,7 +107,7 @@ inline lstring operator+ (const lstring& lhs, const char*   rhs) {
     return lhs.toConstString() + rhs;
 }
 
-//-------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // Replace all occurances of 'search' with 'replace'
 inline const lstring& ReplaceAll(lstring& subject,
     const lstring& search,

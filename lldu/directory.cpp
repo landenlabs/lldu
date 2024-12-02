@@ -45,10 +45,7 @@ const char EXTN_CHAR = '.';
 
 #if defined(_WIN32) || defined(_WIN64)
 
-// #include <sys/stat.h>
-// #include <sys/types.h>
 #include <io.h>
-// #include <stdio.h>
  
 typedef unsigned short mode_t;
 
@@ -236,6 +233,25 @@ bool Directory_files::exists(const char* path) {
 }
 #endif
 
+// ---------------------------------------------------------------------------
+// [static]
+bool Directory_files::makeWriteableFile(const char* filePath, struct stat* info) {
+    struct stat tmpStat;
+
+    if (info == nullptr) {
+        info = &tmpStat;
+        if (stat(filePath, info) != 0)
+            return false;
+    }
+#ifdef HAVE_WIN
+    size_t mask = _S_IFREG + _S_IWRITE;
+    return _chmod(filePath, info->st_mode | mask) == 0;
+#else
+    size_t mask = S_IFREG + S_IWRITE;
+    return chmod(filePath, info->st_mode | mask) == 0;
+#endif
+}
+
 //-------------------------------------------------------------------------------------------------
 // Extract directory part from path.
 lstring& Directory_files::getDir(lstring& outDir, const lstring& inPath) {
@@ -250,11 +266,11 @@ lstring& Directory_files::getDir(lstring& outDir, const lstring& inPath) {
 //-------------------------------------------------------------------------------------------------
 // Extract name part from path.
 lstring& Directory_files::getName(lstring& outName, const lstring& inPath) {
-    size_t nameStart = inPath.rfind(SLASH_CHAR) + 1;
-    if (nameStart == 0)
+    size_t nameStart = inPath.rfind(SLASH_CHAR);
+    if (nameStart == std::string::npos)
         outName = inPath;
     else
-        outName = inPath.substr(nameStart);
+        outName = inPath.substr(nameStart + 1);
     return outName;
 }
 

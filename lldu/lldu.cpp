@@ -257,6 +257,8 @@ size_t FindFiles(const lstring& dirname, unsigned depth) {
         // Probably a pattern, let directory scan do its magic.
     }
 
+    bool showTotals = summary && (depth == 0) && (dirname.find('*') != string::npos);
+
     while (directory.more()) {
         time_t endT;
         currentDateTime(endT);
@@ -277,6 +279,15 @@ size_t FindFiles(const lstring& dirname, unsigned depth) {
                     prevT += 10;
                 }
                 fileCount += FindFiles(fullname, depth + 1);
+
+                if (showTotals) {
+                    if (isTable) {
+                        buildTable(fullname);
+                    } else { /* if (!total) */
+                        printUsage(fullname);
+                    }
+                    clearUsage();
+                }
             }
         } else if (fullname.length() > 0) {
             fileCount += FindFile(fullname);
@@ -313,11 +324,10 @@ void setSortBy(const char* value, bool forward) {
     }
 }
 
-
 //-------------------------------------------------------------------------------------------------
 void showHelp(const char* arg0) {
     const char* helpMsg =
-            "  Dennis Lang v2.1 (LandenLabs.com)_X_ " __DATE__ "\n\n"
+            "  Dennis Lang v2.2 (LandenLabs.com)_X_ " __DATE__ "\n\n"
             "_p_Des: Directory (disk) used space inventory \n"
             "_p_Use: lldu [options] directories...   or  files\n"
             "\n"
@@ -393,8 +403,10 @@ int main(int argc, char* argv[]) {
                 if (cmdValue.size() == 2) {
                     lstring cmd = cmdValue[0];
                     lstring value = cmdValue[1];
-                    const char* cmdName = cmd+1;
-                    
+
+                    const char* cmdName = cmd + 1;
+                    if (cmd.length() > 2 && *cmdName == '-')
+                        cmdName++;  // allow -- prefix on commands
                     switch (*cmdName) {
                         case 'd': // depth=0..n
                             if (parser.validOption("depth", cmdName))  {
@@ -460,7 +472,9 @@ int main(int argc, char* argv[]) {
                     }
                 } else {
                     const char* cmdName = argStr + 1;
-                    switch (argStr[1]) {
+                    if (argStr.length() > 2 && *cmdName == '-')
+                        cmdName++;  // allow -- prefix on commands
+                    switch (*cmdName) {
                     case 'd':
                         if (parser.validOption("divide", cmdName)) {
                             divByHardlink = true;

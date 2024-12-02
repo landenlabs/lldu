@@ -14,6 +14,9 @@ if "%1" == "" (
 if "%1" == "show" (
     echo --- show directories and files to clean ---
 	lr -n -P=.*\\build\\.* -r . 
+	lr -n -P=.*\\x64\\Debug\\.* -r . 
+	lr -n -P=.*\\x64\\Release\\.* -r . 
+    lr -n -P=.*\\.vs\\.* -r . 
 	lr -n -F=*.class -r . 
 	lr -n -F=*.apk -r . 
 	lr -n -F=*.aar -r . 
@@ -25,10 +28,10 @@ if "%1" == "clean" (
 	lr -q -P=.*\\build\\.* -r . 
 	lr -q -P=.*\\x64\\Debug\\.* -r . 
 	lr -q -P=.*\\x64\\Release\\.* -r . 
+	lr -f -P=.*\\.vs\\.* -r . 
 	lr -q -F=*.aar -r . 
 	lr -q -F=*.exe -r . 
 	lr -q -F=*.obj -r .
-	lr -f -P=.*\\\.vs\\.* -r . 
 )
 
 :done

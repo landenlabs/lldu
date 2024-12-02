@@ -33,11 +33,16 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "parseutil.hpp"
+#include "lstring.hpp"
 
 #include <assert.h>
 #include <iostream>
 #include <fstream>
 #include <regex>
+
+#ifdef HAVE_WIN
+#define strncasecmp _strnicmp
+#endif
 
 typedef unsigned int uint;
 
