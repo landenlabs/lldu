@@ -43,11 +43,8 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include <ctype.h>
 #include <fstream>
 #include <iostream>
-#include <sstream>
-#include <iomanip>
 #include <vector>
 #include <map>
 #include <algorithm>
@@ -56,6 +53,14 @@
 
 #define _POSIX_C_SOURCE 200809L
 #include <locale.h>
+
+#ifdef HAVE_WIN
+#include <direct.h> // _getcwd
+#define chdir _chdir
+#define getcwd _getcwd
+#else
+const size_t MAX_PATH = __DARWIN_MAXPATHLEN;
+#endif
 
 using namespace std;
 
@@ -86,6 +91,7 @@ static bool showFile = true;
 static bool verbose = false;
 static unsigned maxDepth = 0;
 static bool summary = false;
+static bool showAbsPath = false;    // -absolute = show absolute path. 
 static bool total = false;
 static bool dryrun = false;
 static bool divByHardlink = false;
@@ -139,6 +145,8 @@ void printUsage(const std::string& filepath);
 void buildTable(const std::string& filepath);
 void printTable();
 
+static char CWD_BUF[MAX_PATH];
+static unsigned CWD_LEN = 0;
 
 //-------------------------------------------------------------------------------------------------
 // Get current date/time, format is YYYY-MM-DD.HH:mm:ss
@@ -384,7 +392,6 @@ void showHelp(const char* arg0) {
 
 //-------------------------------------------------------------------------------------------------
 int main(int argc, char* argv[]) {
-    
     ParseUtil parser;
     
     if (argc == 1) {
@@ -393,6 +400,9 @@ int main(int argc, char* argv[]) {
     } else {
         // Try and setup for %'d printf to output comma. Does not work on MacOS
         setlocale(LC_ALL, "");
+
+        getcwd(CWD_BUF, sizeof(CWD_BUF));
+        CWD_LEN = (unsigned)strlen(CWD_BUF) + 1;
 
         bool doParseCmds = true;
         string endCmds = "--";
@@ -475,6 +485,11 @@ int main(int argc, char* argv[]) {
                     if (argStr.length() > 2 && *cmdName == '-')
                         cmdName++;  // allow -- prefix on commands
                     switch (*cmdName) {
+                    case 'a':
+                        if (parser.validOption("absolute", cmdName)) {
+                            showAbsPath = true;
+                        }
+                        break;
                     case 'd':
                         if (parser.validOption("divide", cmdName)) {
                             divByHardlink = true;
@@ -629,7 +644,8 @@ void printUsage(const std::string& filepath) {
         if (filepath.empty()) {
             ParseUtil::printParts(sformat.c_str(), "_GTotal", gtotalCount, gtotalLinks, gtotalFileSize);
         } else {
-            ParseUtil::printParts(sformat.c_str(), filepath.c_str(), totalCount, totalLinks, totalFileSize);
+            unsigned off = showAbsPath ? 0 : CWD_LEN;
+            ParseUtil::printParts(sformat.c_str(), filepath.c_str() + off, totalCount, totalLinks, totalFileSize);
         }
     } else {
         if (tformat.length() > 0) {
