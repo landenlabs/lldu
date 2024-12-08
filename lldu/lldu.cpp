@@ -42,7 +42,6 @@
 #include "parseutil.hpp"
 
 #include <assert.h>
-#include <stdio.h>
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -52,7 +51,6 @@
 #include <exception>
 
 #define _POSIX_C_SOURCE 200809L
-#include <locale.h>
 
 #ifdef HAVE_WIN
 #include <direct.h> // _getcwd
@@ -135,7 +133,7 @@ std::string separator = "\t";
 std::string format = "%8.8e\t%8c\t%15s\n";        // %s\t%8d\t%15d\n";
 std::string header = "     Ext\t   Count\t      Size\n";
 std::string tformat = format;
-std::string sformat = "%S %n\n";
+std::string sformat = "%10S %n\n";
 int setBothFmt = 0;
 time_t startT, prevT;
 
@@ -335,7 +333,7 @@ void setSortBy(const char* value, bool forward) {
 //-------------------------------------------------------------------------------------------------
 void showHelp(const char* arg0) {
     const char* helpMsg =
-            "  Dennis Lang v2.2 (LandenLabs.com)_X_ " __DATE__ "\n\n"
+            "  Dennis Lang v2.3 (LandenLabs.com)_X_ " __DATE__ "\n\n"
             "_p_Des: Directory (disk) used space inventory \n"
             "_p_Use: lldu [options] directories...   or  files\n"
             "\n"
@@ -644,7 +642,9 @@ void printUsage(const std::string& filepath) {
         if (filepath.empty()) {
             ParseUtil::printParts(sformat.c_str(), "_GTotal", gtotalCount, gtotalLinks, gtotalFileSize);
         } else {
-            unsigned off = showAbsPath ? 0 : CWD_LEN;
+            unsigned off = 0;
+            if (!showAbsPath && strncmp(filepath.c_str(), CWD_BUF, CWD_LEN-1) == 0) 
+                off = CWD_LEN;
             ParseUtil::printParts(sformat.c_str(), filepath.c_str() + off, totalCount, totalLinks, totalFileSize);
         }
     } else {
