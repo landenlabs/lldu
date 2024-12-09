@@ -1,8 +1,7 @@
-
+# lldu 
 git init
-git remote add origin https://landenlabs@github.com/landenlabs/lldu
- 
-git add lldu lldu.xcodeproj/project.pbxproj  README.md
-git commit -m "first commit"
+git remote add origin https://landenlabs@github.com/landenlabs/lldu.git
 
-   
+git add .
+git commit -m "first commit"
+git push --set-upstream origin main
