@@ -34,11 +34,6 @@
 
 #include "ll_stdhdr.hpp"
 
-#ifdef HAVE_WIN
-#include <windows.h>
-#include <stdio.h>
-#endif
-
 #include <regex>
 typedef std::vector<std::regex> PatternList;
 
@@ -58,20 +53,16 @@ public:
  
     bool validFile(fstream& stream, int mode, const lstring& value, const char* validCmd, const char* possibleCmd, bool reportErr = true);
     
-    
-    static
-    const char* convertSpecialChar(const char* inPtr);
-    
-    static
-    lstring& getParts(
+    static bool FileMatches(const lstring& inName, const PatternList& patternList, bool emptyResult);
+    static const char* convertSpecialChar(const char* inPtr);
+    static lstring& getParts(
             lstring& outPart,
             const char* partSelector,
             const char* name,
             const char* ext,
             unsigned num );
     
-    static
-    void  printParts(
+    static void  printParts(
         const char* partFmt,
         const char* name,
         size_t count,
@@ -134,6 +125,12 @@ inline string& replaceRE(string& inOut, const char* findRE, const char* replaceW
     inOut = regex_replace(inOut, pattern, replaceWith, flags);
     return inOut;
 }
+
+#ifdef HAVE_WIN
+#include <windows.h>
+#include <stdio.h>
+#endif
+
 
 class Colors {
 public:

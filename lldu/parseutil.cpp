@@ -33,7 +33,6 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "parseutil.hpp"
-#include "lstring.hpp"
 
 #include <assert.h>
 #include <iostream>
@@ -68,7 +67,7 @@ std::regex ParseUtil::getRegEx(const char* value) {
 }
 
 //-------------------------------------------------------------------------------------------------
-// Validate option matchs and optionally report problem to user.
+// Validate option matches and optionally report problem to user.
 bool ParseUtil::validOption(const char* validCmd, const char* possibleCmd, bool reportErr) {
     // Starts with validCmd else mark error
     size_t validLen = strlen(validCmd);
@@ -116,8 +115,24 @@ bool ParseUtil::validFile(
     return isOk;
 }
 
+
+// ---------------------------------------------------------------------------
+// Return true if inName matches pattern in patternList
+// [static]
+bool ParseUtil::FileMatches(const lstring& inName, const PatternList& patternList, bool emptyResult) {
+    if (patternList.empty() || inName.empty())
+        return emptyResult;
+
+    for (size_t idx = 0; idx != patternList.size(); idx++)
+        if (std::regex_match(inName.begin(), inName.end(), patternList[idx]))
+            return true;
+
+    return false;
+}
+
 //-------------------------------------------------------------------------------------------------
 // Convert special characters from text to binary.
+// [static]
 const char* ParseUtil::convertSpecialChar(const char* inPtr) {
     uint len = 0;
     int x, n, scnt;
@@ -259,6 +274,7 @@ printf("%s", fmtNumComma(value, buf));
 */
 
 //-------------------------------------------------------------------------------------------------
+// [static]
 lstring& ParseUtil::getParts(
         lstring& outPart,
         const char* partSelector,

@@ -159,20 +159,6 @@ const std::string currentDateTime(time_t& now) {
 }
 
 //-------------------------------------------------------------------------------------------------
-// Return true if inName matches pattern in patternList
-static
-bool FileMatches(const lstring& inName, const PatternList& patternList, bool emptyResult) {
-    if (patternList.empty() || inName.empty())
-        return emptyResult;
-
-    for (size_t idx = 0; idx != patternList.size(); idx++)
-        if (std::regex_match(inName.begin(), inName.end(), patternList[idx]))
-            return true;
-
-    return false;
-}
-
-//-------------------------------------------------------------------------------------------------
 // Open, read and parse file.
 static
 bool ExamineFile(const lstring& filepath, const lstring& filename) {
@@ -182,7 +168,7 @@ bool ExamineFile(const lstring& filepath, const lstring& filename) {
 
     lstring ext;
     if (pickPatList.empty()) {
-        Directory_files::getExt(ext, filename);
+        DirUtil::getExt(ext, filename);
     } else  {
         std::smatch smatch;
         PickPatList::const_iterator iter;
@@ -230,11 +216,11 @@ static
 size_t FindFile(const lstring& fullname) {
     size_t fileCount = 0;
     lstring name;
-    Directory_files::getName(name, fullname);
+    DirUtil::getName(name, fullname);
 
     if (! name.empty()
-        && ! FileMatches(name, excludeFilePatList, false)
-        && FileMatches(name, includeFilePatList, true)) {
+        && ! ParseUtil::FileMatches(name, excludeFilePatList, false)
+        && ParseUtil::FileMatches(name, includeFilePatList, true)) {
         if (ExamineFile(fullname, name)) {
             fileCount++;
             if (showFile)
@@ -275,8 +261,8 @@ size_t FindFiles(const lstring& dirname, unsigned depth) {
             // getName(name, fullname);
             if ((maxDepth == 0 || depth < maxDepth)
                     && (! dryrun || depth < 1)
-                    && ! FileMatches(fullname, excludeDirPatList, false)
-                    && FileMatches(fullname, includeDirPatList, true)) {
+                    && ! ParseUtil::FileMatches(fullname, excludeDirPatList, false)
+                    && ParseUtil::FileMatches(fullname, includeDirPatList, true)) {
                 if (verbose) {
                     std::cout << fullname << std::endl;
                 } else if (std::difftime(endT, prevT) > 30) {
@@ -338,10 +324,10 @@ void showHelp(const char* arg0) {
             "_p_Use: lldu [options] directories...   or  files\n"
             "\n"
             " _p_Options (only first unique characters required, options can be repeated):\n"
-            "   -_y_includefile=<filePattern>\n"
-            "   -_y_excludefile=<filePattern>\n"
-            "   -_y_Includedir=<dirPattern>        ; Match against full dir path \n"
-            "   -_y_Excludedir=<dirPattern>        ; Match against full dir path \n"
+            "   -_y_includeFile=<filePattern>\n"
+            "   -_y_excludeFile=<filePattern>\n"
+            "   -_y_IncludeDir=<dirPattern>        ; Match against full dir path \n"
+            "   -_y_ExcludeDir=<dirPattern>        ; Match against full dir path \n"
             "   -_y_verbose\n"
             "   -_y_progress                       ; Show scan progress every 30 sec \n"
             "   -_y_pick=<fromPat>;<toStr>         ; Def: ..*[.](.+);$1 \n"
@@ -372,8 +358,8 @@ void showHelp(const char* arg0) {
             "    uses standard printf formatting except for these special cases\n"
             "    e=file extension, c=count, s=size, l=links \n"
             "    lowercase c,s,l  format with commas \n"
-            "    uppercas  C,S,L  format without commas \n"
-            "    preceed with width, ex %12.12e\\t%8c\\t%10s\\n \n"
+            "    uppercase  C,S,L  format without commas \n"
+            "    precede with width, ex %12.12e\\t%8c\\t%10s\\n \n"
             "\n"
             " _p_Output:\n"
             "    Ext  Count  Size\n"
@@ -436,7 +422,7 @@ int main(int argc, char* argv[]) {
                             }
                             break;
                         case 'F':
-                             if (parser.validOption("Formatsummary", cmdName)) {
+                             if (parser.validOption("FormatSummary", cmdName)) {
                                 sformat = ParseUtil::convertSpecialChar(value);
                             }
                             break;
