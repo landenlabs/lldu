@@ -5,9 +5,4 @@ git remote add origin https://landenlabs@github.com/landenlabs/lldu
 git add lldu lldu.xcodeproj/project.pbxproj  README.md
 git commit -m "first commit"
 
-# go onto GIT for landenlabs and make all-uitest repro
-
-git push -u origin master
-   password token:
-   ec26390f3685fb1b6c0f15d59eb2d9f7596926c5
    
