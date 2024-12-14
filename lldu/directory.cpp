@@ -35,6 +35,7 @@
 
 #include <iostream>
 
+const char EXTN_CHAR = '.';
 
 #ifdef HAVE_WIN
     #include <windows.h>
@@ -46,7 +47,7 @@ static const mode_t S_IRUSR = mode_t(_S_IREAD);     //  read by user
 static const mode_t S_IWUSR = mode_t(_S_IWRITE);    //  write by user
 #define chmod _chmod
 
-const char EXTN_CHAR = '.';
+
 const lstring ANY("\\*");
 const lstring Directory_files::SLASH = "\\";
 const char Directory_files::SLASH_CHAR = '\\';
@@ -211,7 +212,7 @@ const char* Directory_files::name() const {
 
 //-------------------------------------------------------------------------------------------------
 const lstring& Directory_files::fullName(lstring& fname) const {
-    return join(fname, my_baseDir, my_pDirEnt->d_name);
+    return DirUtil::join(fname, my_baseDir, my_pDirEnt->d_name);
 }
 
 
