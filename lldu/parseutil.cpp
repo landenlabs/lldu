@@ -1,5 +1,5 @@
 //-------------------------------------------------------------------------------------------------
-// File: parseutil.hpp
+// File: parseutil.cpp
 // Author: Dennis Lang
 //
 // Desc: Parsing utility functions.
@@ -40,10 +40,56 @@
 #include <regex>
 
 #ifdef HAVE_WIN
-#define strncasecmp _strnicmp
+    #define strncasecmp _strnicmp
+#else
+    #include <signal.h>
 #endif
 
 typedef unsigned int uint;
+
+volatile bool abortFlag = false;    // Set true by signal handler
+
+
+#ifdef HAVE_WIN
+//-------------------------------------------------------------------------------------------------
+BOOL WINAPI CtrlHandler(DWORD fdwCtrlType) {
+    switch (fdwCtrlType)  {
+    case CTRL_C_EVENT:  // Handle the CTRL-C signal.
+        Command::abortFlag = true;
+        std::cerr << "\nCaught signal " << std::endl;
+        Beep(750, 300);
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+#else
+//-------------------------------------------------------------------------------------------------
+void sigHandler(int /* sig_t */ s) {
+    abortFlag = true;
+    std::cerr << "\nCaught signal " << std::endl;
+}
+#endif
+
+// ---------------------------------------------------------------------------
+ParseUtil::ParseUtil() noexcept {
+#ifdef HAVE_WIN
+    if (! SetConsoleCtrlHandler(CtrlHandler, TRUE)) {
+        std::cerr << "Failed to install sig handler" << endl;
+    }
+#else
+    // signal(SIGINT, sigHandler);
+
+    struct sigaction sigIntHandler;
+    sigIntHandler.sa_handler = sigHandler;
+    sigemptyset(&sigIntHandler.sa_mask);
+    sigIntHandler.sa_flags = 0;
+    if (sigaction(SIGINT, &sigIntHandler, NULL) != 0) {
+        std::cerr << "Failed to install sig handler" << endl;
+    }
+#endif
+}
 
 // ---------------------------------------------------------------------------
 void ParseUtil::showUnknown(const char* argStr) {
@@ -55,11 +101,13 @@ void ParseUtil::showUnknown(const char* argStr) {
 // Return compiled regular expression from text.
 std::regex ParseUtil::getRegEx(const char* value) {
     try {
-        std::string valueStr(value);
+        lstring valueStr(value);
+        convertSpecialChar(valueStr);
+        // dumpStr("From", valueStr);
         return std::regex(valueStr);
         // return std::regex(valueStr, regex_constants::icase);
-    }  catch (const std::regex_error& regEx)   {
-        std::cerr << Colors::colorize("_R") << regEx.what() << ", Pattern=" << value << Colors::colorize("_X_\n");
+    } catch (const std::regex_error& regEx) {
+        Colors::showError("Invalid regular expression ", regEx.what(), ", Pattern=", value);
     }
 
     patternErrCnt++;
@@ -73,11 +121,11 @@ bool ParseUtil::validOption(const char* validCmd, const char* possibleCmd, bool 
     size_t validLen = strlen(validCmd);
     size_t possibleLen = strlen(possibleCmd);
 
-    if ( strncasecmp(validCmd, possibleCmd, std::min(validLen, possibleLen)) == 0)
+    if (strncasecmp(validCmd, possibleCmd, std::min(validLen, possibleLen)) == 0)
         return true;
 
     if (reportErr) {
-        std::cerr << Colors::colorize("_R_Unknown option:'")  << possibleCmd << "', expect:'" << validCmd << Colors::colorize("'_X_\n");
+        std::cerr << Colors::colorize("_R_Unknown option:'") << possibleCmd << "', expect:'" << validCmd << Colors::colorize("'_X_\n");
         optionErrCnt++;
     }
     return false;
@@ -86,7 +134,7 @@ bool ParseUtil::validOption(const char* validCmd, const char* possibleCmd, bool 
 //-------------------------------------------------------------------------------------------------
 bool ParseUtil::validPattern(PatternList& outList, lstring& value, const char* validCmd, const char* possibleCmd, bool reportErr) {
     bool isOk = validOption(validCmd, possibleCmd, reportErr);
-    if (isOk)  {
+    if (isOk) {
         ReplaceAll(value, "*", ".*");
         ReplaceAll(value, "?", ".");
         outList.push_back(getRegEx(value));
@@ -108,7 +156,7 @@ bool ParseUtil::validFile(
         stream.open(value, mode);
         int err = errno;
         if (stream.bad()) {
-            std::cerr << Colors::colorize("_R_Failed to open ") << validCmd << " "  << value << " " << strerror(err) <<  Colors::colorize("'_X_\n");
+            Colors::showError("Failed to open ", validCmd, " ", value, " ", strerror(err));
             optionErrCnt++;
         }
     }
@@ -190,88 +238,19 @@ const char* ParseUtil::convertSpecialChar(const char* inPtr) {
     return begPtr;
 }
 
-// ---------------------------------------------------------------------------
-#include <locale>
-#include <iostream>
-
-template <typename Ch>
-class numfmt: public std::numpunct<Ch> {
-    int group;    // Number of characters in a group
-    Ch  separator; // Character to separate groups
-public:
-    numfmt(Ch sep, int grp): separator(sep), group(grp) {}
-private:
-    Ch do_thousands_sep() const { return separator; }
-    std::string do_grouping() const { return std::string(1, group); }
-};
-
-inline void EnableCommaCout() {
-#if 0
-    char sep = ',';
-    int group = 3;
-    std::cout.imbue(std::locale(std::locale(),
-        new numfmt<char>(sep, group)));
-#else
-    setlocale(LC_ALL, "");
-    std::locale mylocale("");   // Get system locale
-    std::cout.imbue(mylocale);
-#endif
+//-------------------------------------------------------------------------------------------------
+// Get current date/time, format is YYYY-MM-DD.HH:mm:ss
+// [static]
+std::string& ParseUtil::fmtDateTime(string& outTmStr, time_t& now) {
+    now = time(0);
+    struct tm  tstruct;
+    char       buf[80];
+    tstruct = *localtime(&now);
+    // Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
+    strftime(buf, sizeof(buf), "%Y-%m-%d.%X", &tstruct);
+    outTmStr = buf;
+    return outTmStr;
 }
-
-inline void DisableCommaCout() {
-    std::cout.imbue(std::locale(std::locale()));
-}
-
-#if defined(__APPLE__) && defined(__MACH__)
-    #include <printf.h>
-    #define PRINTF(a,b) xprintf(_domain, NULL, a,b)
-    static printf_domain_t _domain;
-#else
-    #define PRINTF(a,b) printf(a,b)
-#endif
-
-inline void initPrintf() {
-#if defined(__APPLE__) && defined(__MACH__)
-    _domain = new_printf_domain();
-    setlocale(LC_ALL, "en_US.UTF-8");
-#endif
-}
-
-
-
-#if 0
-// ---------------------------------------------------------------------------
-const char* fmtNumComma(size_t n, char*& buf) {
-    char* result = buf;
-    /*
-     // if n is signed value.
-    if (n < 0) {
-        *buf++ = "-";
-        return printfcomma(-n, buf);
-    }
-    */
-    if (n < 1000) {
-        buf += snprintf((char*)buf, 4, "%lu", (unsigned long)n);
-        return result;
-    }
-    fmtNumComma(n / 1000, buf);
-    buf += snprintf((char*)buf, 5, ",%03lu", (unsigned long) n % 1000);
-    return result;
-}
-
-// Legacy ?windows? way of adding commas
-char buf[40];
-printf("%s", fmtNumComma(value, buf));
-#endif
-
-/*
-#if defined(__APPLE__) && defined(__MACH__)
-#include <printf.h>
-#define PRINTF(a,b) xprintf(domain, NULL, a,b)
-#else
-#define PRINTF(a,b) printf(a,b)
-#endif
-*/
 
 //-------------------------------------------------------------------------------------------------
 // [static]
@@ -282,13 +261,6 @@ lstring& ParseUtil::getParts(
         const char* ext,        // just extension, no dot prefix
         unsigned num) {
 
-#ifdef HAVE_WIN
-    const char* FMT_NUM = "lu";
-#else
-    const char* FMT_NUM = "'lu";  //  "`lu" linux supports ` to add commas
-    EnableCommaCout();
-#endif
-    
     unsigned width=0;
     char numFmt[10], numStr[10];
     
@@ -325,93 +297,4 @@ lstring& ParseUtil::getParts(
     }
     
     return outPart;
-}
-
-//-------------------------------------------------------------------------------------------------
-void ParseUtil::printParts(
-    const char* customFmt,
-    const char* name,
-    size_t count,
-    size_t links,
-    size_t size) {
-    /*
-    #if defined(__APPLE__) && defined(__MACH__)
-        printf_domain_t domain = new_printf_domain();
-        setlocale(LC_ALL, "en_US.UTF-8");
-    #endif
-     */
-    initPrintf();
-
-    // Handle custom printf syntax to get to path parts:
-    //    %#.#s
-    //   n=name c=count, s=size
-
-    const int NONE = 12345;
-    lstring itemFmt;
-#ifdef HAVE_WIN
-    const char* FMT_NUM = "lu";
-#else
-    const char* FMT_NUM = "'lu";  //  "`lu" linux supports ` to add commas
-#endif
- 
-    char* fmt = (char*)customFmt;
-    while (*fmt) {
-        char c = *fmt;
-        if (c != '%') {
-            putchar(c);
-            fmt++;
-        } else {
-            const char* begFmt = fmt;
-            int precision = NONE;
-            int width = (int)strtol(fmt + 1, &fmt, 10);
-            if (*fmt == '.') {
-                precision = (int)strtol(fmt + 1, &fmt, 10);
-            }
-            c = *fmt;
-
-            itemFmt = begFmt;
-            itemFmt.resize(fmt - begFmt);
-            EnableCommaCout();
-
-            switch (c) {
-            case 'e':   // Extension
-            case 'n':   // name
-                itemFmt += "s";
-                printf(itemFmt, name);
-                break;
-            case 'C':   // Count
-                // DisableCommaCout();
-                itemFmt += "lu";        // unsigned long formatter
-                printf(itemFmt, count); // print with commas
-                break;
-            case 'c':   // Count
-                itemFmt += FMT_NUM;       // unsigned long formatter
-                PRINTF(itemFmt, count); // print with commas
-                break;
-            case 'L':   // Links
-                // DisableCommaCout();
-                itemFmt += "lu";        // unsigned long formatter
-                printf(itemFmt, links);
-                break;
-            case 'l':   // Links
-                itemFmt += FMT_NUM;       // unsigned long formatter
-                PRINTF(itemFmt, links);
-                break;
-            case 'S':   // Size
-                // DisableCommaCout();
-                itemFmt += "lu";       // unsigned long formatter
-                printf(itemFmt, size);
-                break;
-            case 's':   // Size
-                itemFmt += FMT_NUM;       // unsigned long formatter
-                PRINTF(itemFmt, size);
-                break;
-
-            default:
-                putchar(c);
-                break;
-            }
-            fmt++;
-        }
-    }
 }

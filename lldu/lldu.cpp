@@ -581,6 +581,169 @@ void clearUsage() {
     duList.clear();
 }
 
+
+// ---------------------------------------------------------------------------
+#include <locale>
+#include <iostream>
+
+template <typename Ch>
+class numfmt: public std::numpunct<Ch> {
+    int group;    // Number of characters in a group
+    Ch  separator; // Character to separate groups
+public:
+    numfmt(Ch sep, int grp): separator(sep), group(grp) {}
+private:
+    Ch do_thousands_sep() const { return separator; }
+    std::string do_grouping() const { return std::string(1, group); }
+};
+
+inline void EnableCommaCout() {
+#if 0
+    char sep = ',';
+    int group = 3;
+    std::cout.imbue(std::locale(std::locale(),
+        new numfmt<char>(sep, group)));
+#else
+    setlocale(LC_ALL, "");
+    std::locale mylocale("");   // Get system locale
+    std::cout.imbue(mylocale);
+#endif
+}
+
+inline void DisableCommaCout() {
+    std::cout.imbue(std::locale(std::locale()));
+}
+
+
+#if 0
+// ---------------------------------------------------------------------------
+const char* fmtNumComma(size_t n, char*& buf) {
+    char* result = buf;
+    /*
+     // if n is signed value.
+    if (n < 0) {
+        *buf++ = "-";
+        return printfcomma(-n, buf);
+    }
+    */
+    if (n < 1000) {
+        buf += snprintf((char*)buf, 4, "%lu", (unsigned long)n);
+        return result;
+    }
+    fmtNumComma(n / 1000, buf);
+    buf += snprintf((char*)buf, 5, ",%03lu", (unsigned long) n % 1000);
+    return result;
+}
+
+// Legacy ?windows? way of adding commas
+char buf[40];
+printf("%s", fmtNumComma(value, buf));
+#endif
+
+#if defined(__APPLE__) && defined(__MACH__)
+    #include <printf.h>
+    #define PRINTF(a,b) xprintf(_domain, NULL, a,b)
+    static printf_domain_t _domain;
+#else
+    #define PRINTF(a,b) printf(a,b)
+#endif
+
+inline void initPrintf() {
+#if defined(__APPLE__) && defined(__MACH__)
+    _domain = new_printf_domain();
+    setlocale(LC_ALL, "en_US.UTF-8");
+#endif
+}
+
+//-------------------------------------------------------------------------------------------------
+void printParts(
+    const char* customFmt,
+    const char* name,
+    size_t count,
+    size_t links,
+    size_t size) {
+    /*
+    #if defined(__APPLE__) && defined(__MACH__)
+        printf_domain_t domain = new_printf_domain();
+        setlocale(LC_ALL, "en_US.UTF-8");
+    #endif
+     */
+    initPrintf();
+
+    // Handle custom printf syntax to get to path parts:
+    //    %#.#s
+    //   n=name c=count, s=size
+
+    const int NONE = 12345;
+    lstring itemFmt;
+#ifdef HAVE_WIN
+    const char* FMT_NUM = "lu";
+#else
+    const char* FMT_NUM = "'lu";  //  "`lu" linux supports ` to add commas
+#endif
+ 
+    char* fmt = (char*)customFmt;
+    while (*fmt) {
+        char c = *fmt;
+        if (c != '%') {
+            putchar(c);
+            fmt++;
+        } else {
+            const char* begFmt = fmt;
+            int precision = NONE;
+            int width = (int)strtol(fmt + 1, &fmt, 10);
+            if (*fmt == '.') {
+                precision = (int)strtol(fmt + 1, &fmt, 10);
+            }
+            c = *fmt;
+
+            itemFmt = begFmt;
+            itemFmt.resize(fmt - begFmt);
+            EnableCommaCout();
+
+            switch (c) {
+            case 'e':   // Extension
+            case 'n':   // name
+                itemFmt += "s";
+                printf(itemFmt, name);
+                break;
+            case 'C':   // Count
+                // DisableCommaCout();
+                itemFmt += "lu";        // unsigned long formatter
+                printf(itemFmt, count); // print with commas
+                break;
+            case 'c':   // Count
+                itemFmt += FMT_NUM;       // unsigned long formatter
+                PRINTF(itemFmt, count); // print with commas
+                break;
+            case 'L':   // Links
+                // DisableCommaCout();
+                itemFmt += "lu";        // unsigned long formatter
+                printf(itemFmt, links);
+                break;
+            case 'l':   // Links
+                itemFmt += FMT_NUM;       // unsigned long formatter
+                PRINTF(itemFmt, links);
+                break;
+            case 'S':   // Size
+                // DisableCommaCout();
+                itemFmt += "lu";       // unsigned long formatter
+                printf(itemFmt, size);
+                break;
+            case 's':   // Size
+                itemFmt += FMT_NUM;       // unsigned long formatter
+                PRINTF(itemFmt, size);
+                break;
+
+            default:
+                putchar(c);
+                break;
+            }
+            fmt++;
+        }
+    }
+}
+
 //-------------------------------------------------------------------------------------------------
 size_t gtotalCount = 0;
 size_t gtotalLinks = 0;
@@ -608,7 +771,7 @@ void printUsage(const std::string& filepath) {
     for (auto iter = vecDuList.cbegin(); iter != vecDuList.cend(); iter++) {
         if (! summary && ! total) {
             if (format.length() > 0) {
-                ParseUtil::printParts(format.c_str(), iter->ext.c_str(), iter->count, iter->hardlinks, iter->diskSize);
+                printParts(format.c_str(), iter->ext.c_str(), iter->count, iter->hardlinks, iter->diskSize);
             } else {
                 // std::cout << iter->first << separator << iter->second.count << separator << iter->second.diskSize << std::endl;
             }
@@ -626,19 +789,19 @@ void printUsage(const std::string& filepath) {
 
     if (summary) {
         if (filepath.empty()) {
-            ParseUtil::printParts(sformat.c_str(), "_GTotal", gtotalCount, gtotalLinks, gtotalFileSize);
+            printParts(sformat.c_str(), "_GTotal", gtotalCount, gtotalLinks, gtotalFileSize);
         } else {
             unsigned off = 0;
             if (!showAbsPath && strncmp(filepath.c_str(), CWD_BUF, CWD_LEN-1) == 0) 
                 off = CWD_LEN;
-            ParseUtil::printParts(sformat.c_str(), filepath.c_str() + off, totalCount, totalLinks, totalFileSize);
+            printParts(sformat.c_str(), filepath.c_str() + off, totalCount, totalLinks, totalFileSize);
         }
     } else {
         if (tformat.length() > 0) {
             if (filepath.empty())
-                ParseUtil::printParts(tformat.c_str(), "_GTotal", gtotalCount, gtotalLinks, gtotalFileSize);
+                printParts(tformat.c_str(), "_GTotal", gtotalCount, gtotalLinks, gtotalFileSize);
             else
-                ParseUtil::printParts(tformat.c_str(), "_Total", totalCount, totalLinks, totalFileSize);
+                printParts(tformat.c_str(), "_Total", totalCount, totalLinks, totalFileSize);
         } else {
             // std::cout << iter->first << separator << iter->second.count << separator << iter->second.diskSize << std::endl;
         }

@@ -35,8 +35,10 @@
 #include "ll_stdhdr.hpp"
 
 #include <regex>
-typedef std::vector<std::regex> PatternList;
+#include <set>
+#include <iostream>
 
+typedef std::vector<std::regex> PatternList;
 
 //-------------------------------------------------------------------------------------------------
 class ParseUtil {
@@ -44,8 +46,13 @@ class ParseUtil {
 public:
     unsigned optionErrCnt = 0;
     unsigned patternErrCnt = 0;
-    
+    std::set<std::string> parseArgSet;
+
+    ParseUtil() noexcept ;
+    // ~ParseUtil();
+
     void showUnknown(const char* argStr);
+
     std::regex getRegEx(const char* value);
  
     bool validOption(const char* validCmd, const char* possibleCmd, bool reportErr = true);
@@ -55,19 +62,13 @@ public:
     
     static bool FileMatches(const lstring& inName, const PatternList& patternList, bool emptyResult);
     static const char* convertSpecialChar(const char* inPtr);
+    static std::string& fmtDateTime(string& outTmStr, time_t& now);
     static lstring& getParts(
             lstring& outPart,
             const char* partSelector,
             const char* name,
             const char* ext,
             unsigned num );
-    
-    static void  printParts(
-        const char* partFmt,
-        const char* name,
-        size_t count,
-        size_t links,
-        size_t size);
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -173,6 +174,26 @@ public:
         replaceRE(str, "_W_", WHITE);
         replaceRE(str, "_X_", OFF);
         return str;
+    }
+
+    template <typename... Things>
+    static void cerrArgs(Things... things) {
+        for (const auto p : {things...}) {
+            std::cerr << p << std::endl;
+        }
+    }
+
+    // Show error in RED
+    template<typename T, typename... Args>
+    static void showError(T first, Args... args) {
+        std::cerr << Colors::colorize("_R_");
+        std::cerr << first;
+// #ifdef HAVE_WIN
+//        cerrArgs(args...);
+// #else
+        ((std::cerr << args << " "), ...);
+// #endif
+        std::cerr << Colors::colorize("_X_\n");
     }
 };
 
