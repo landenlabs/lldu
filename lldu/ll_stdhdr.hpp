@@ -38,7 +38,7 @@ typedef unsigned short  UShort;
     #define HAVE_WIN
     #define NOMINMAX
     #define _CRT_SECURE_NO_WARNINGS   // define before all includes
-    typedef unsigned long DWORD;
+    // typedef unsigned long DWORD;
 #else
     typedef unsigned int DWORD;
 #endif
