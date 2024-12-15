@@ -55,7 +55,7 @@ volatile bool abortFlag = false;    // Set true by signal handler
 BOOL WINAPI CtrlHandler(DWORD fdwCtrlType) {
     switch (fdwCtrlType)  {
     case CTRL_C_EVENT:  // Handle the CTRL-C signal.
-        Command::abortFlag = true;
+        abortFlag = true;
         std::cerr << "\nCaught signal " << std::endl;
         Beep(750, 300);
         return TRUE;

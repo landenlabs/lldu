@@ -128,7 +128,9 @@ inline string& replaceRE(string& inOut, const char* findRE, const char* replaceW
 }
 
 #ifdef HAVE_WIN
-#include <windows.h>
+#define byte win_byte_override 
+#include <Windows.h>
+#undef byte
 #include <stdio.h>
 #endif
 

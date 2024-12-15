@@ -38,7 +38,9 @@
 const char EXTN_CHAR = '.';
 
 #ifdef HAVE_WIN
-#include <windows.h>
+#define byte win_byte_override 
+#include <Windows.h>
+#undef byte
 #include <io.h>
  
 typedef unsigned short mode_t;

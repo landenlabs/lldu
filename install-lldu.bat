@@ -19,7 +19,7 @@ rmdir /s x64 2> nul
 @echo Build release target
 @rem %devenv%  %prog%.sln /Build  "Release|x64"
 echo "%_msbuild%" %prog%.sln -p:Configuration="Release";Platform=x64 -verbosity:minimal  -detailedSummary:True
-"%_msbuild%" %prog%.sln -p:Configuration="Release";Platform=x64 -verbosity:minimal  -detailedSummary:True
+"%_msbuild%" %prog%.sln -p:Configuration="Release";Platform=x64 -verbosity:minimal  -detailedSummary:True -property:LanguageStandard=stdcpp17
 cd ..
 
 @echo.
@@ -37,6 +37,6 @@ copy %prog%-ms\x64\Release\%prog%.exe d:\opt\bin\%prog%.exe
 @echo.
 @echo Compare md5 hash
 cmp -h %prog%-ms\x64\Release\%prog%.exe d:\opt\bin\%prog%.exe
-ld -a d:\opt\bin\%prog%.exe
+ld -a -ph %prog%-ms\x64\Release\%prog%.exe d:\opt\bin\%prog%.exe
 
 :_end

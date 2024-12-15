@@ -53,7 +53,9 @@
 
 
 #ifdef HAVE_WIN
-    #include <windows.h>
+#define byte win_byte_override 
+#include <Windows.h>
+#undef byte
 #else
     typedef unsigned int  DWORD;
     typedef struct dirent Dirent;
