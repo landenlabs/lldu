@@ -47,50 +47,6 @@
 
 typedef unsigned int uint;
 
-volatile bool abortFlag = false;    // Set true by signal handler
-
-
-#ifdef HAVE_WIN
-//-------------------------------------------------------------------------------------------------
-BOOL WINAPI CtrlHandler(DWORD fdwCtrlType) {
-    switch (fdwCtrlType)  {
-    case CTRL_C_EVENT:  // Handle the CTRL-C signal.
-        abortFlag = true;
-        std::cerr << "\nCaught signal " << std::endl;
-        Beep(750, 300);
-        return TRUE;
-    }
-
-    return FALSE;
-}
-
-#else
-//-------------------------------------------------------------------------------------------------
-void sigHandler(int /* sig_t */ s) {
-    abortFlag = true;
-    std::cerr << "\nCaught signal " << std::endl;
-}
-#endif
-
-// ---------------------------------------------------------------------------
-ParseUtil::ParseUtil() noexcept {
-#ifdef HAVE_WIN
-    if (! SetConsoleCtrlHandler(CtrlHandler, TRUE)) {
-        std::cerr << "Failed to install sig handler" << endl;
-    }
-#else
-    // signal(SIGINT, sigHandler);
-
-    struct sigaction sigIntHandler;
-    sigIntHandler.sa_handler = sigHandler;
-    sigemptyset(&sigIntHandler.sa_mask);
-    sigIntHandler.sa_flags = 0;
-    if (sigaction(SIGINT, &sigIntHandler, NULL) != 0) {
-        std::cerr << "Failed to install sig handler" << endl;
-    }
-#endif
-}
-
 // ---------------------------------------------------------------------------
 void ParseUtil::showUnknown(const char* argStr) {
     std::cerr << Colors::colorize("Use -h for help.\n_Y_Unknown option _R_") << argStr << Colors::colorize("_X_\n");
@@ -297,4 +253,52 @@ lstring& ParseUtil::getParts(
     }
     
     return outPart;
+}
+
+//-------------------------------------------------------------------------------------------------
+#ifdef HAVE_WIN
+#define byte win_byte_override 
+#include <Windows.h>
+#undef byte
+#include <stdio.h>
+#endif
+
+#define RED    "\033[01;31m"
+#define GREEN  "\033[01;32m"
+#define YELLOW "\033[01;33m"
+#define BLUE   "\033[01;34m"
+#define PINK   "\033[01;35m"
+#define LBLUE  "\033[01;36m"
+#define WHITE  "\033[01;37m"
+#define OFF    "\033[00m"
+
+
+string Colors::colorize(const char* inStr) {
+#ifdef HAVE_WIN
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD dwMode = 0;
+    GetConsoleMode(hOut, &dwMode);
+    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    SetConsoleMode(hOut, dwMode);
+#endif
+    string str(inStr);
+
+    // _x_  where x lowercase, colorize following word
+    replaceRE(str, "_y_(\\w+)", YELLOW "$1" OFF);
+    replaceRE(str, "_r_(\\w+)", RED "$1" OFF);
+    replaceRE(str, "_g_(\\w+)", GREEN "$1" OFF);
+    replaceRE(str, "_p_(\\w+)", PINK "$1" OFF);
+    replaceRE(str, "_lb_(\\w+)", LBLUE "$1" OFF);
+    replaceRE(str, "_w_(\\w+)", WHITE "$1" OFF);
+
+    // _X_  where X uppercase, colorize until _X_
+    replaceRE(str, "_Y_", YELLOW);
+    replaceRE(str, "_R_", RED);
+    replaceRE(str, "_G_", GREEN);
+    replaceRE(str, "_P_", PINK);
+    replaceRE(str, "_B_", BLUE);
+    replaceRE(str, "_LB_", LBLUE);
+    replaceRE(str, "_W_", WHITE);
+    replaceRE(str, "_X_", OFF);
+    return str;
 }

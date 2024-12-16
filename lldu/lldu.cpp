@@ -38,8 +38,10 @@
 
 // Project files
 #include "ll_stdhdr.hpp"
-#include "directory.hpp"
+#include "signals.hpp"
 #include "parseutil.hpp"
+#include "directory.hpp"
+
 
 #include <assert.h>
 #include <fstream>
@@ -81,7 +83,6 @@ static PatternList excludeDirPatList;
 static PickPatList pickPatList;
 static StringList fileDirList;
 
-// static ParseUtil parser;
 static lstring tableType = "count";
 static bool isTable = false;        // -table=count|size|hardlink
 
@@ -95,8 +96,6 @@ static bool dryrun = false;
 static bool divByHardlink = false;
 static bool progress = false;
 
-static uint optionErrCnt = 0;
-static uint patternErrCnt = 0;
 
 struct DuInfo {
     std::string ext;
@@ -145,18 +144,6 @@ void printTable();
 
 static char CWD_BUF[MAX_PATH];
 static unsigned CWD_LEN = 0;
-
-//-------------------------------------------------------------------------------------------------
-// Get current date/time, format is YYYY-MM-DD.HH:mm:ss
-const std::string currentDateTime(time_t& now) {
-    now = time(0);
-    struct tm tstruct;
-    char buf[80];
-    tstruct = *localtime(&now);
-    // Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
-    strftime(buf, sizeof(buf), "%Y-%m-%d.%X", &tstruct);
-    return buf;
-}
 
 //-------------------------------------------------------------------------------------------------
 // Open, read and parse file.
@@ -237,7 +224,7 @@ static
 size_t FindFiles(const lstring& dirname, unsigned depth) {
     Directory_files directory(dirname);
     lstring fullname;
-
+    lstring timeStr;
     size_t fileCount = 0;
 
     struct stat filestat;
@@ -251,9 +238,9 @@ size_t FindFiles(const lstring& dirname, unsigned depth) {
 
     bool showTotals = summary && (depth == 0) && (dirname.find('*') != string::npos);
 
-    while (directory.more()) {
+    while (!Signals::aborted && directory.more()) {
         time_t endT;
-        currentDateTime(endT);
+        ParseUtil::fmtDateTime(timeStr, endT);
 
         directory.fullName(fullname);
         if (directory.is_directory()) {
@@ -376,8 +363,10 @@ void showHelp(const char* arg0) {
 
 //-------------------------------------------------------------------------------------------------
 int main(int argc, char* argv[]) {
+    Signals::init();
     ParseUtil parser;
-    
+    lstring timeStr;
+
     if (argc == 1) {
         showHelp(argv[0]);
         return 0;
@@ -529,9 +518,9 @@ int main(int argc, char* argv[]) {
             addPicker("..*[.](.+);$1");
         }
 
-        if (patternErrCnt == 0 && optionErrCnt == 0 && fileDirList.size() != 0) {
+        if (parser.patternErrCnt == 0 && parser.optionErrCnt == 0 && fileDirList.size() != 0) {
             if (! summary)
-                std::cerr <<  Colors::colorize("_G_ +Start ") << currentDateTime(startT) << Colors::colorize("_X_\n");
+                std::cerr <<  Colors::colorize("_G_ +Start ") << ParseUtil::fmtDateTime(timeStr, startT) << Colors::colorize("_X_\n");
             prevT = startT;
 
             if (fileDirList.size() == 1 && fileDirList[0] == "-") {
@@ -559,9 +548,9 @@ int main(int argc, char* argv[]) {
             
             if (! summary) {
                 time_t endT;
-                currentDateTime(endT);
+                ParseUtil::fmtDateTime(timeStr, endT);
                 std::cerr <<  Colors::colorize("_G_ +End ")
-                    << currentDateTime(endT)
+                    << timeStr
                     << ", Elapsed "
                     << std::difftime(endT, startT)
                     << Colors::colorize(" (sec)_X_\n");

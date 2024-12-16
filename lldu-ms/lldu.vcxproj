@@ -22,12 +22,14 @@
     <ClCompile Include="..\lldu\directory.cpp" />
     <ClCompile Include="..\lldu\lldu.cpp" />
     <ClCompile Include="..\lldu\parseutil.cpp" />
+    <ClCompile Include="..\lldu\signals.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\lldu\directory.hpp" />
     <ClInclude Include="..\lldu\ll_stdhdr.hpp" />
     <ClInclude Include="..\lldu\lstring.hpp" />
     <ClInclude Include="..\lldu\parseutil.hpp" />
+    <ClInclude Include="..\lldu\signals.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
