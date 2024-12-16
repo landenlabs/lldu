@@ -257,9 +257,9 @@ lstring& ParseUtil::getParts(
 
 //-------------------------------------------------------------------------------------------------
 #ifdef HAVE_WIN
-#define byte win_byte_override 
+#define byte win_byte_override      // Fix for c++ v17+
 #include <Windows.h>
-#undef byte
+#undef byte                         // Fix for c++ v17+
 #include <stdio.h>
 #endif
 
