@@ -95,6 +95,7 @@ static bool total = false;
 static bool dryrun = false;
 static bool divByHardlink = false;
 static bool progress = false;
+static size_t progressLen = 0;
 
 
 struct DuInfo {
@@ -144,6 +145,13 @@ void printTable();
 
 static char CWD_BUF[MAX_PATH];
 static unsigned CWD_LEN = 0;
+
+//-------------------------------------------------------------------------------------------------
+void clearProgress() {
+    if (progressLen > 0)
+        printf("%*s\r", progressLen, "");
+    progressLen = 0;
+}
 
 //-------------------------------------------------------------------------------------------------
 // Open, read and parse file.
@@ -252,10 +260,13 @@ size_t FindFiles(const lstring& dirname, unsigned depth) {
                     && ParseUtil::FileMatches(fullname, includeDirPatList, true)) {
                 if (verbose) {
                     std::cout << fullname << std::endl;
-                } else if (std::difftime(endT, prevT) > 30) {
-                    if (progress)
-                        std::cerr << std::difftime(endT, startT) << "(sec) " << fullname << "  \r";
-                    prevT += 10;
+                } else if (std::difftime(endT, prevT) > 10) {
+                    if (progress) {
+                        clearProgress();
+                        progressLen = 6 + 7 + fullname.length();
+                        std::cerr << (size_t)std::difftime(endT, startT) << "(sec) " << fullname << "  \r";
+                    }
+                    prevT = endT;
                 }
                 fileCount += FindFiles(fullname, depth + 1);
 
@@ -519,9 +530,10 @@ int main(int argc, char* argv[]) {
         }
 
         if (parser.patternErrCnt == 0 && parser.optionErrCnt == 0 && fileDirList.size() != 0) {
-            if (! summary)
-                std::cerr <<  Colors::colorize("_G_ +Start ") << ParseUtil::fmtDateTime(timeStr, startT) << Colors::colorize("_X_\n");
+            ParseUtil::fmtDateTime(timeStr, startT);
             prevT = startT;
+            if (! summary)
+                std::cerr <<  Colors::colorize("_G_ +Start ") << timeStr << Colors::colorize("_X_\n");
 
             if (fileDirList.size() == 1 && fileDirList[0] == "-") {
                 string filePath;
@@ -733,6 +745,7 @@ void printParts(
     }
 }
 
+
 //-------------------------------------------------------------------------------------------------
 size_t gtotalCount = 0;
 size_t gtotalLinks = 0;
@@ -783,6 +796,8 @@ void printUsage(const std::string& filepath) {
             unsigned off = 0;
             if (!showAbsPath && strncmp(filepath.c_str(), CWD_BUF, CWD_LEN-1) == 0) 
                 off = CWD_LEN;
+            
+            clearProgress();
             printParts(sformat.c_str(), filepath.c_str() + off, totalCount, totalLinks, totalFileSize);
         }
     } else {
