@@ -37,10 +37,7 @@
 #include <iostream>
 
 #ifdef HAVE_WIN
-#define byte win_byte_override      // Fix for c++ v17
 #include <windows.h>
-#undef byte                         // Fix for c++ v17
-#include <io.h>
 #else
 #include <signal.h>
 #endif
@@ -74,7 +71,7 @@ void Signals::init() {
 
 //-------------------------------------------------------------------------------------------------
 void sigHandler(int /* sig_t */ s) {
-    abortFlag = true;
+    Signals::aborted = true;
     std::cerr << "\nCaught signal " << std::endl;
 }
 
