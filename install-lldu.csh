@@ -19,3 +19,7 @@ cp $src ~/opt/bin/
 echo
 echo "---Files "
 ls -al $src  ~/opt/bin/$app
+
+echo
+echo "---Signed---"
+codesign -dv  ~/opt/bin/$app |& grep Sig
