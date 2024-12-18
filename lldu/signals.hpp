@@ -38,6 +38,7 @@
 class Signals {
 public:
     static volatile bool aborted;
+    static volatile unsigned int abortCnt;
 
     static void init();
 };

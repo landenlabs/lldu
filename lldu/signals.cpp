@@ -37,13 +37,16 @@
 #include <iostream>
 
 #ifdef HAVE_WIN
+#define byte win_byte_override  // Fix for c++ v17
 #include <windows.h>
+#undef byte                     // Fix for c++ v17
 #else
 #include <signal.h>
 #endif
 
 
 volatile bool Signals::aborted = false;    // Set true by signal handler
+volatile unsigned int Signals::abortCnt = 0;
 
 
 #ifdef HAVE_WIN
@@ -54,6 +57,8 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType) {
         Signals::aborted = true;
         std::cerr << "\nCaught signal " << std::endl;
         Beep(750, 300);
+        if (Signals::abortCnt++ >= 2)
+            exit(-1);
         return TRUE;
     }
 
@@ -63,7 +68,7 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType) {
 //-------------------------------------------------------------------------------------------------
 void Signals::init() {
     if (! SetConsoleCtrlHandler(CtrlHandler, TRUE)) {
-        std::cerr << "Failed to install sig handler" << endl;
+        std::cerr << "Failed to install sig handler \a" << endl;
     }
 }
 
@@ -72,7 +77,9 @@ void Signals::init() {
 //-------------------------------------------------------------------------------------------------
 void sigHandler(int /* sig_t */ s) {
     Signals::aborted = true;
-    std::cerr << "\nCaught signal " << std::endl;
+    std::cerr << "\nCaught signal \a " << std::endl;
+    if (Signals::abortCnt++ >= 2)
+        exit(-1);
 }
 
 //-------------------------------------------------------------------------------------------------
