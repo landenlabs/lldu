@@ -41,8 +41,6 @@
 
 #ifdef HAVE_WIN
     #define strncasecmp _strnicmp
-#else
-    #include <signal.h>
 #endif
 
 typedef unsigned int uint;
