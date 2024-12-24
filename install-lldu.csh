@@ -14,7 +14,6 @@ set src=./DerivedData/Build/Products/Release/$app
 echo
 echo "---Install $src"
 cp $src ~/opt/bin/
-# cp $src /usr/local/opt/
 
 echo
 echo "---Files "
