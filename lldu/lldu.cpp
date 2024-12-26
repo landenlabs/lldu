@@ -149,7 +149,7 @@ static unsigned CWD_LEN = 0;
 //-------------------------------------------------------------------------------------------------
 void clearProgress() {
     if (progressLen > 0)
-        printf("%*s\r", progressLen, "");
+        printf("%*s\r", (int)progressLen, "");
     progressLen = 0;
 }
 
@@ -258,6 +258,7 @@ size_t FindFiles(const lstring& dirname, unsigned depth) {
                     && (! dryrun || depth < 1)
                     && ! ParseUtil::FileMatches(fullname, excludeDirPatList, false)
                     && ParseUtil::FileMatches(fullname, includeDirPatList, true)) {
+
                 if (verbose) {
                     std::cout << fullname << std::endl;
                 } else if (std::difftime(endT, prevT) > 10) {
@@ -317,7 +318,7 @@ void setSortBy(const char* value, bool forward) {
 //-------------------------------------------------------------------------------------------------
 void showHelp(const char* arg0) {
     const char* helpMsg =
-            "  Dennis Lang v2.4 (LandenLabs.com)_X_ " __DATE__ "\n\n"
+            "  Dennis Lang v2.5 (LandenLabs.com)_X_ " __DATE__ "\n\n"
             "_p_Des: Directory (disk) used space inventory \n"
             "_p_Use: lldu [options] directories...   or  files\n"
             "\n"
@@ -326,6 +327,7 @@ void showHelp(const char* arg0) {
             "   -_y_excludeFile=<filePattern>\n"
             "   -_y_IncludeDir=<dirPattern>        ; Match against full dir path \n"
             "   -_y_ExcludeDir=<dirPattern>        ; Match against full dir path \n"
+            "   NOTE - Patterns above - remember to escape backslash as \\\\ \n"
             "   -_y_verbose\n"
             "   -_y_progress                       ; Show scan progress every 30 sec \n"
             "   -_y_pick=<fromPat>;<toStr>         ; Def: ..*[.](.+);$1 \n"
@@ -340,8 +342,14 @@ void showHelp(const char* arg0) {
             "   -_y_summary                        ; Single row for each path \n"
             "   -_y_table=count|size|links         ; Present results in table \n"
             "   -_y_divide                         ; Divide size by hardlink count \n"
+            "   -_y_regex                          ; FilePattern us native regex \n"
+            "   NOTE - default patterns convert * to .*, . to [.] and ? to . \n "
             "\n"
             " _p_Example:\n"
+            "   lldu  -_y_sum -_y_Exc=*.git  * \n"
+            "   lldu  -_y_sum -_y_Exc=*\\\\.git  * \n"
+            "   lldu  -_y_sum -_y_Exc=*\\\\.(git||vs) * \n"
+            "   lldu  -_y_sum -_y_regex -_y_Exc=.*\\\\[.](git||vs) * \n"
             "   lldu '-_y_inc=*.bak' -_y_ex=foo.json '-_y_ex=*/subdir2' dir1/subdir dir2 *.txt file2.json \n"
             "   lldu '-_y_exclude=\\.*' '-_y_pick=[^.]+[.](.{4,});other' . \n"
             "   lldu '-_y_exclude=\\.*' '-_y_pick=[^.]+[.](.{4,});other' -_y_sort=size -_y_rev=count . \n"
@@ -493,11 +501,16 @@ int main(int argc, char* argv[]) {
                             progress = true;
                         }
                         break;
+                    case 'r':   // -regex
+                        if (parser.validOption("regex", cmdName)) {
+                            parser.dosRegEx = false;
+                        }
+                        break;
                     case 's':   // -summary
                         if (parser.validOption("summary", cmdName)) {
                             summary = true;
                         }
-                        break;;
+                        break;
                     case 't':   // -total
                         if (parser.validOption("total", cmdName)) {
                             total = true;

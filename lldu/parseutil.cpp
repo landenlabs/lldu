@@ -57,11 +57,13 @@ std::regex ParseUtil::getRegEx(const char* value) {
     try {
         lstring valueStr(value);
         convertSpecialChar(valueStr);
-        // dumpStr("From", valueStr);
+        // std::cerr << "Pattern:" << value << " converted to:" << valueStr << std::endl;
         return std::regex(valueStr);
         // return std::regex(valueStr, regex_constants::icase);
     } catch (const std::regex_error& regEx) {
         Colors::showError("Invalid regular expression ", regEx.what(), ", Pattern=", value);
+    } catch (...) {
+        Colors::showError("Invalid regular expression=", value);
     }
 
     patternErrCnt++;
@@ -89,8 +91,15 @@ bool ParseUtil::validOption(const char* validCmd, const char* possibleCmd, bool 
 bool ParseUtil::validPattern(PatternList& outList, lstring& value, const char* validCmd, const char* possibleCmd, bool reportErr) {
     bool isOk = validOption(validCmd, possibleCmd, reportErr);
     if (isOk) {
-        ReplaceAll(value, "*", ".*");
-        ReplaceAll(value, "?", ".");
+        if (dosRegEx) { 
+            // Convert simple DOS patterns to regular expression
+            //  .   -> [.]    // match on dot
+            //  *   ->  .*    // zero or more of anything
+            //  ?   ->  .     // single any character
+            ReplaceAll(value, std::regex("([^[])[.]"), "$1[.]");
+            ReplaceAll(value, "*", ".*");
+            ReplaceAll(value, "?", ".");
+        }
         outList.push_back(getRegEx(value));
         return true;
     }
@@ -175,7 +184,11 @@ const char* ParseUtil::convertSpecialChar(const char* inPtr) {
             // seep through
             default:
                 throw( "Warning: unrecognized escape sequence" );
-            case '\\':
+            case '\0': // Trailing slash 
+                inPtr--;
+                break;
+            case '\\':      // Double slash becomes single
+                *outPtr++ = *inPtr;
             case '\?':
             case '\'':
             case '\"':

@@ -44,6 +44,7 @@ typedef std::vector<std::regex> PatternList;
 class ParseUtil {
     
 public:
+    bool dosRegEx = true;
     unsigned optionErrCnt = 0;
     unsigned patternErrCnt = 0;
     std::set<std::string> parseArgSet;

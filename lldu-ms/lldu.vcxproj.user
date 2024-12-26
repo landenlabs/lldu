@@ -9,7 +9,7 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments>--sum --progress *</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-Exc="*.git" -table=size  F:\opt\software\git\llfile  F:\opt\software\cpp\dlang\all\_ll\llfile</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>
