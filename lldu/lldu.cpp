@@ -317,7 +317,7 @@ void setSortBy(const char* value, bool forward) {
 //-------------------------------------------------------------------------------------------------
 void showHelp(const char* arg0) {
     const char* helpMsg =
-            "  Dennis Lang v2.3 (LandenLabs.com)_X_ " __DATE__ "\n\n"
+            "  Dennis Lang v2.4 (LandenLabs.com)_X_ " __DATE__ "\n\n"
             "_p_Des: Directory (disk) used space inventory \n"
             "_p_Use: lldu [options] directories...   or  files\n"
             "\n"
@@ -837,7 +837,9 @@ void buildTable(const std::string& filepath) {
 void printTable() {
     printf("Table of %s\n", tableType.c_str());
     size_t* totals = new size_t[filePaths.size()];
-    
+    for (size_t col = 0; col < filePaths.size(); col++)
+        totals[col] = 0;
+
     // Print merged table
     for (const auto & duItem : tableList) {
         printf("%10.10s  ", duItem.first.c_str());
@@ -854,8 +856,9 @@ void printTable() {
                 case 'l': // links
                 case 'h': value = iter->hardlinks; break;
             }
+
             printf("%10lu", (unsigned long)value);
-            totals[col++] +=  value;
+            totals[col++] += value;
         }
        
         printf("\n");
