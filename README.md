@@ -13,32 +13,39 @@ Visit home website
 
 Help Banner:
 <pre>
-lldu  Dennis Lang v2.1 (LandenLabs.com) Nov 28 2024
+lldu  Dennis Lang v2.5 (LandenLabs.com) Dec 26 2024
 
 Des: Directory (disk) used space inventory
 Use: lldu [options] directories...   or  files
 
  Options (only first unique characters required, options can be repeated):
-   -includefile=<filePattern>
-   -excludefile=<filePattern>
-   -Includedir=<dirPattern>        ; Match against full dir path
-   -Excludedir=<dirPattern>        ; Match against full dir path
+   -includeFile=&lt;filePattern>
+   -excludeFile=&lt;filePattern>
+   -IncludeDir=&lt;dirPattern>        ; Match against full dir path
+   -ExcludeDir=&lt;dirPattern>        ; Match against full dir path
+   NOTE - Patterns above - remember to escape backslash as \\
    -verbose
    -progress                       ; Show scan progress every 30 sec
-   -pick=<fromPat>;<toStr>         ; Def: ..*[.](.+);$1
-   -format=<format-3-values>       ; Def: %8.8e\t%8c\t%15s\n
+   -pick=&lt;fromPat>;&lt;toStr>         ; Def: ..*[.](.+);$1
+   -format=&lt;format-3-values>       ; Def: %8.8e\t%8c\t%15s\n
         e=ext, c=count, l=links, s=size, n=name
-   -format=<format-3-values>       ; Second format for Total
-   -FormatSummary=<format-1-value> ; Summary Format, Def: "%S %e\n"
+   -format=&lt;format-3-values>       ; Second format for Total
+   -FormatSummary=&lt;format-1-value> ; Summary Format, Def: "%S %e\n"
    -sort=ext|count|size            ; Def: ext
    -reverse=ext|count|size         ; Reverse sort
-   -header=<header>                ; Def: Ext\tCount\tSize\n
+   -header=&lt;header>                ; Def: Ext\tCount\tSize\n
    -total                          ; Single report for all inputs
    -summary                        ; Single row for each path
    -table=count|size|links         ; Present results in table
    -divide                         ; Divide size by hardlink count
+   -regex                          ; FilePattern us native regex
+   NOTE - default patterns convert * to .*, . to [.] and ? to .
 
  Example:
+   lldu  -sum -Exc=*.git  *
+   lldu  -sum -Exc=*\\.git  *
+   lldu  -sum -Exc=*\\.(git||vs) *
+   lldu  -sum -regex -Exc=.*\\[.](git||vs) *
    lldu '-inc=*.bak' -ex=foo.json '-ex=*/subdir2' dir1/subdir dir2 *.txt file2.json
    lldu '-exclude=\.*' '-pick=[^.]+[.](.{4,});other' .
    lldu '-exclude=\.*' '-pick=[^.]+[.](.{4,});other' -sort=size -rev=count .
@@ -54,8 +61,8 @@ Use: lldu [options] directories...   or  files
     uses standard printf formatting except for these special cases
     e=file extension, c=count, s=size, l=links
     lowercase c,s,l  format with commas
-    uppercas  C,S,L  format without commas
-    preceed with width, ex %12.12e\t%8c\t%10s\n
+    uppercase  C,S,L  format without commas
+    precede with width, ex %12.12e\t%8c\t%10s\n
 
  Output:
     Ext  Count  Size

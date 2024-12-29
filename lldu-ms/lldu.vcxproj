@@ -30,6 +30,10 @@
     <ClInclude Include="..\lldu\lstring.hpp" />
     <ClInclude Include="..\lldu\parseutil.hpp" />
     <ClInclude Include="..\lldu\signals.hpp" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="lldu.rc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
