@@ -342,8 +342,9 @@ void showHelp(const char* arg0) {
             "   -_y_summary                        ; Single row for each path \n"
             "   -_y_table=count|size|links         ; Present results in table \n"
             "   -_y_divide                         ; Divide size by hardlink count \n"
-            "   -_y_regex                          ; FilePattern us native regex \n"
-            "   NOTE - default patterns convert * to .*, . to [.] and ? to . \n "
+            "   -_y_regex                          ; Use regex pattern not DOS pattern \n"
+            "   NOTE - DOS patterns converts * to .*, . to [.] and ? to . \n "
+            "          Must use -_y_regex before pattern options\n"
             "\n"
             " _p_Example:\n"
             "   lldu  -_y_sum -_y_Exc=*.git  * \n"
@@ -478,14 +479,10 @@ int main(int argc, char* argv[]) {
                         cmdName++;  // allow -- prefix on commands
                     switch (*cmdName) {
                     case 'a':
-                        if (parser.validOption("absolute", cmdName)) {
-                            showAbsPath = true;
-                        }
+                        showAbsPath = parser.validOption("absolute", cmdName);
                         break;
                     case 'd':
-                        if (parser.validOption("divide", cmdName)) {
-                            divByHardlink = true;
-                        }
+                        divByHardlink = parser.validOption("divide", cmdName);
                         break;
                     case 'h':
                         if (parser.validOption("help", cmdName)) {
@@ -497,29 +494,19 @@ int main(int argc, char* argv[]) {
                         dryrun = true;
                         break;
                     case 'p':   // -progress
-                        if (parser.validOption("progress", cmdName)) {
-                            progress = true;
-                        }
+                        progress = parser.validOption("progress", cmdName);
                         break;
                     case 'r':   // -regex
-                        if (parser.validOption("regex", cmdName)) {
-                            parser.dosRegEx = false;
-                        }
+                        parser.unixRegEx = parser.validOption("regex", cmdName);
                         break;
                     case 's':   // -summary
-                        if (parser.validOption("summary", cmdName)) {
-                            summary = true;
-                        }
+                        summary = parser.validOption("summary", cmdName);
                         break;
                     case 't':   // -total
-                        if (parser.validOption("total", cmdName)) {
-                            total = true;
-                        }
+                        total = parser.validOption("total", cmdName);
                         break;
                     case 'v':   // -v=true or -v=anyThing
-                        if (parser.validOption("verbose", cmdName)) {
-                            verbose = true;
-                        }
+                        verbose = parser.validOption("verbose", cmdName);
                         break;
                     case '?':
                         showHelp(argv[0]);

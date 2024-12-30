@@ -57,9 +57,7 @@ std::regex ParseUtil::getRegEx(const char* value) {
     try {
         lstring valueStr(value);
         convertSpecialChar(valueStr);
-        // std::cerr << "Pattern:" << value << " converted to:" << valueStr << std::endl;
-        return std::regex(valueStr);
-        // return std::regex(valueStr, regex_constants::icase);
+        return ignoreCase ? std::regex(valueStr, regex_constants::icase) : std::regex(valueStr);
     } catch (const std::regex_error& regEx) {
         Colors::showError("Invalid regular expression ", regEx.what(), ", Pattern=", value);
     } catch (...) {
@@ -77,8 +75,10 @@ bool ParseUtil::validOption(const char* validCmd, const char* possibleCmd, bool 
     size_t validLen = strlen(validCmd);
     size_t possibleLen = strlen(possibleCmd);
 
-    if (strncasecmp(validCmd, possibleCmd, std::min(validLen, possibleLen)) == 0)
+    if (strncasecmp(validCmd, possibleCmd, std::min(validLen, possibleLen)) == 0) {
+        parseArgSet.insert(validCmd);
         return true;
+    }
 
     if (reportErr) {
         std::cerr << Colors::colorize("_R_Unknown option:'") << possibleCmd << "', expect:'" << validCmd << Colors::colorize("'_X_\n");
@@ -91,7 +91,7 @@ bool ParseUtil::validOption(const char* validCmd, const char* possibleCmd, bool 
 bool ParseUtil::validPattern(PatternList& outList, lstring& value, const char* validCmd, const char* possibleCmd, bool reportErr) {
     bool isOk = validOption(validCmd, possibleCmd, reportErr);
     if (isOk) {
-        if (dosRegEx) { 
+        if (!unixRegEx) {
             // Convert simple DOS patterns to regular expression
             //  .   -> [.]    // match on dot
             //  *   ->  .*    // zero or more of anything
@@ -101,7 +101,6 @@ bool ParseUtil::validPattern(PatternList& outList, lstring& value, const char* v
             ReplaceAll(value, "?", ".");
         }
         outList.push_back(getRegEx(value));
-        return true;
     }
     return isOk;
 }
@@ -183,6 +182,7 @@ const char* ParseUtil::convertSpecialChar(const char* inPtr) {
                 }
             // seep through
             default:
+                Colors::showError("Warning: unrecognized escape sequence:", inPtr);
                 throw( "Warning: unrecognized escape sequence" );
             case '\0': // Trailing slash 
                 inPtr--;

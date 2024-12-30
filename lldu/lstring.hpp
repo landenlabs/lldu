@@ -105,6 +105,12 @@ public:
 inline lstring operator+ (const lstring& lhs, const lstring& rhs) {
     return lhs.toConstString() + rhs.toConstString();
 }
+inline std::string operator+ (const std::string& lhs, const lstring& rhs) {
+    return lhs + rhs.toConstString();
+}
+inline lstring operator+ (const lstring& lhs, const std::string& rhs) {
+    return lhs.toConstString() + rhs;
+}
 inline lstring operator+ (const lstring& lhs, const char*   rhs) {
     return lhs.toConstString() + rhs;
 }
