@@ -97,6 +97,7 @@ static bool divByHardlink = false;
 static bool progress = false;
 static size_t progressLen = 0;
 
+const size_t MAX_DIR_DEPTH = 200;
 
 struct DuInfo {
     std::string ext;
@@ -255,13 +256,14 @@ size_t FindFiles(const lstring& dirname, unsigned depth) {
             // lstring name;
             // getName(name, fullname);
             if ((maxDepth == 0 || depth < maxDepth)
-                    && (! dryrun || depth < 1)
-                    && ! ParseUtil::FileMatches(fullname, excludeDirPatList, false)
-                    && ParseUtil::FileMatches(fullname, includeDirPatList, true)) {
+                && (!dryrun || depth < 1)
+                && !ParseUtil::FileMatches(fullname, excludeDirPatList, false)
+                && ParseUtil::FileMatches(fullname, includeDirPatList, true)) {
 
                 if (verbose) {
                     std::cout << fullname << std::endl;
-                } else if (std::difftime(endT, prevT) > 10) {
+                }
+                else if (std::difftime(endT, prevT) > 10) {
                     if (progress) {
                         clearProgress();
                         progressLen = 6 + 7 + fullname.length();
@@ -269,7 +271,19 @@ size_t FindFiles(const lstring& dirname, unsigned depth) {
                     }
                     prevT = endT;
                 }
-                fileCount += FindFiles(fullname, depth + 1);
+
+                if (fullname.find_first_of('?') == string::npos) {
+                    if (depth < MAX_DIR_DEPTH) {
+                        fileCount += FindFiles(fullname, depth + 1);
+                    }
+                    else {
+                        std::cerr << "Exceeded max directory depth " << MAX_DIR_DEPTH << std::endl;
+                        std::cerr << fullname << std::endl;
+                    }
+                }
+                else {
+                    std::cerr << "Invalid file name:" <<fullname << std::endl;
+                }
 
                 if (showTotals) {
                     if (isTable) {
