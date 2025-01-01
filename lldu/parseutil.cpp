@@ -184,7 +184,7 @@ const char* ParseUtil::convertSpecialChar(const char* inPtr) {
             default:
                 Colors::showError("Warning: unrecognized escape sequence:", inPtr);
                 throw( "Warning: unrecognized escape sequence" );
-            case '\0': // Trailing slash 
+            case '\0': // Trailing slash
                 inPtr--;
                 break;
             case '\\':      // Double slash becomes single

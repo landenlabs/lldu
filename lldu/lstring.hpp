@@ -89,7 +89,7 @@ public:
         this->assign(rhs);
         return *this;
     }
-    
+
     lstring& toLower() {
         transform(begin(), end(), begin(),::tolower);
         return *this;

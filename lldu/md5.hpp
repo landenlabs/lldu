@@ -1,13 +1,11 @@
 //-------------------------------------------------------------------------------------------------
-//
-//  ll_stdhdr.hpp   Landen Labs Standard constants/typedefs/defines   Dennis Lang
-//
+// File: md5.h    Author: Dennis Lang  Desc: Compute md5 hash of file contents
 //-------------------------------------------------------------------------------------------------
 //
 // Author: Dennis Lang - 2024
 // https://landenlabs.com
 //
-// This file is part of lldu project.
+// This file is part of lldupdir project.
 //
 // ----- License ----
 //
@@ -32,17 +30,15 @@
 
 #pragma once
 
-typedef unsigned short  UShort;
+#include "ll_stdhdr.hpp"
 
-#if defined(_WIN32) || defined(_WIN64)
-    #define HAVE_WIN
-    #define NOMINMAX
-    #define _CRT_SECURE_NO_WARNINGS   // define before all includes
-    // typedef unsigned long DWORD;
-#else
-    typedef unsigned int DWORD;
-#endif
+class Md5 {
+public:
 
-#include "lstring.hpp"
+    static const char* compute(const char* filePath);
 
-using namespace std;        // use after including c++ headers
+private:
+    Md5(const Md5&);
+    Md5& operator=(const Md5&);
+};
+
