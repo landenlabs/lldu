@@ -20,12 +20,6 @@
 //              ...
 //          }
 //-------------------------------------------------------------------------------------------------
-//
-// Author: Dennis Lang - 2024
-// https://landenlabs.com
-//
-// This file is part of lldupdir project.
-//
 // ----- License ----
 //
 // Copyright (c) 2024  Dennis Lang
@@ -139,6 +133,8 @@ private:
 
 #endif
 };
+
+enum DIR_TYPES { IS_FILE, IS_DIR_BEG, IS_DIR_END };
 
 namespace DirUtil {
  lstring& getDir(lstring& outName, const lstring& inPath);

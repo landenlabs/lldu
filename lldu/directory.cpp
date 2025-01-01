@@ -7,8 +7,6 @@
 // Author: Dennis Lang - 2024
 // https://landenlabs.com
 //
-// This file is part of lldu  project.
-//
 // ----- License ----
 //
 // Copyright (c) 2024  Dennis Lang
@@ -170,7 +168,13 @@ const lstring Directory_files::SLASH2 = "//";
 
 //-------------------------------------------------------------------------------------------------
 Directory_files::Directory_files(const lstring& dirName) {
-    realpath(dirName.c_str(), my_fullname);
+    if (!DirUtil::fileExists(dirName)) {
+        // Remove any wildcard are extra characters.
+        DirUtil::getDir(my_baseDir, dirName);
+        realpath(my_baseDir.c_str(), my_fullname);
+    } else {
+        realpath(dirName.c_str(), my_fullname);
+    }
     my_baseDir = my_fullname;
     my_pDir = opendir(my_baseDir);
     my_is_more = (my_pDir != NULL);

@@ -79,6 +79,14 @@ public:
         return lstring(std::string::substr(pos, len));
     }
 
+    lstring& replaceStr(const char* from, const char* to) {
+        size_t pos = find(from);
+        if (pos != std::string::npos) {
+            replace(pos, strlen(from), to);
+        }
+        return *this;
+    }
+
     lstring& trim() {
         erase(0, find_first_not_of(' '));       // leading spaces
         erase(find_last_not_of(' ') + 1);       // trailing spaces
@@ -98,7 +106,6 @@ public:
         transform(begin(), end(), begin(),::toupper);
         return *this;
     }
-
 };
 
 

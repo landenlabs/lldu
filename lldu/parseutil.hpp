@@ -143,4 +143,3 @@ public:
         std::cerr << Colors::colorize("_X_\n");
     }
 };
-
