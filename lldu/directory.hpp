@@ -20,12 +20,6 @@
 //              ...
 //          }
 //-------------------------------------------------------------------------------------------------
-//
-// Author: Dennis Lang - 2024
-// https://landenlabs.com
-//
-// This file is part of lldupdir project.
-//
 // ----- License ----
 //
 // Copyright (c) 2024  Dennis Lang
@@ -53,9 +47,9 @@
 
 
 #ifdef HAVE_WIN
-#define byte win_byte_override          // Fix for c++ v17
-#include <Windows.h>
-#undef byte                             // Fix for c++ v17
+#define byte win_byte_override  // Fix for c++ v17
+#include <windows.h>
+#undef byte                     // Fix for c++ v17
 #else
     typedef unsigned int  DWORD;
     typedef struct dirent Dirent;
@@ -140,6 +134,8 @@ private:
 #endif
 };
 
+enum DIR_TYPES { IS_FILE, IS_DIR_BEG, IS_DIR_END };
+
 namespace DirUtil {
  lstring& getDir(lstring& outName, const lstring& inPath);
  lstring& getName(lstring& outName, const lstring& inPath);
@@ -157,7 +153,7 @@ inline bool isWriteableFile(const struct stat& info) {
 #endif
     return ((info.st_mode & mask) == mask);
 }
-    
+
  inline unsigned int minU(unsigned int A, unsigned int B) { return (A<=B) ? A:B; }
 
  // Utility to join directory and name and replace any double slashes with a single slash.

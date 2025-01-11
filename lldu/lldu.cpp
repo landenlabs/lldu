@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------------------
 //
-//  lldu      May-2020       Dennis Lang
+//  lldu      Dec-2024       Dennis Lang
 //
 //  Directory (disk) used space
 //
@@ -215,8 +215,10 @@ size_t FindFile(const lstring& fullname) {
     DirUtil::getName(name, fullname);
 
     if (! name.empty()
-        && ! ParseUtil::FileMatches(name, excludeFilePatList, false)
-        && ParseUtil::FileMatches(name, includeFilePatList, true)) {
+            && !ParseUtil::FileMatches(fullname, excludeDirPatList, false)
+            && ParseUtil::FileMatches(fullname, includeDirPatList, true)
+            && !ParseUtil::FileMatches(name, excludeFilePatList, false)
+            && ParseUtil::FileMatches(name, includeFilePatList, true)) {
         if (ExamineFile(fullname, name)) {
             fileCount++;
             if (showFile)
@@ -253,13 +255,15 @@ size_t FindFiles(const lstring& dirname, unsigned depth) {
 
         directory.fullName(fullname);
         if (directory.is_directory()) {
-            // lstring name;
-            // getName(name, fullname);
+            lstring name;
+            DirUtil::getName(name, fullname);
             if ((maxDepth == 0 || depth < maxDepth)
-                && (!dryrun || depth < 1)
-                && !ParseUtil::FileMatches(fullname, excludeDirPatList, false)
-                && ParseUtil::FileMatches(fullname, includeDirPatList, true)) {
-
+                    && (!dryrun || depth < 1)
+                    && !ParseUtil::FileMatches(fullname, excludeDirPatList, false)
+                    && ParseUtil::FileMatches(fullname, includeDirPatList, true) 
+                    && !ParseUtil::FileMatches(name, excludeFilePatList, false)
+                //    && ParseUtil::FileMatches(name, includeFilePatList, true) 
+            ) {
                 if (verbose) {
                     std::cout << fullname << std::endl;
                 }
@@ -356,15 +360,25 @@ void showHelp(const char* arg0) {
             "   -_y_summary                        ; Single row for each path \n"
             "   -_y_table=count|size|links         ; Present results in table \n"
             "   -_y_divide                         ; Divide size by hardlink count \n"
-            "   -_y_regex                          ; Use regex pattern not DOS pattern \n"
-            "   NOTE - DOS patterns converts * to .*, . to [.] and ? to . \n "
-            "          Must use -_y_regex before pattern options\n"
+            "\n"
+            "   -_y_regex                       ; Use regex pattern not DOS pattern \n"
+            "   NOTE - Default DOS pattern converts * to .*, . to [.] and ? to . \n "
+            "          If using -_y_regex specify before pattern options\n"
+            "   Example to ignore all dot directories and files: \n"
+            "          -_y_regex -_y_exclude=\"[.].*\" \n"
             "\n"
             " _p_Example:\n"
             "   lldu  -_y_sum -_y_Exc=*.git  * \n"
+#ifdef HAVE_WIN
             "   lldu  -_y_sum -_y_Exc=*\\\\.git  * \n"
             "   lldu  -_y_sum -_y_Exc=*\\\\.(git||vs) * \n"
             "   lldu  -_y_sum -_y_regex -_y_Exc=.*\\\\[.](git||vs) * \n"
+#else
+            "   lldu  -_y_sum -_y_Exc='*/.git'  * \n"
+            "   lldu  -_y_sum -_y_Exc='*/.(git||vs)' * \n"
+            "   lldu  -_y_sum -_y_regex -_y_Exc='.*/[.](git||vs)' * \n"
+#endif
+            "   lldu  -_y_sum -_y_regex -_y_exc=\"[.](git||vs)\" * \n"
             "   lldu '-_y_inc=*.bak' -_y_ex=foo.json '-_y_ex=*/subdir2' dir1/subdir dir2 *.txt file2.json \n"
             "   lldu '-_y_exclude=\\.*' '-_y_pick=[^.]+[.](.{4,});other' . \n"
             "   lldu '-_y_exclude=\\.*' '-_y_pick=[^.]+[.](.{4,});other' -_y_sort=size -_y_rev=count . \n"
@@ -430,10 +444,10 @@ int main(int argc, char* argv[]) {
                                 maxDepth = atoi(value);
                             }
                             break;
-                        case 'e':   // excludeFile=<pat>
+                        case 'e':   // excludeFile=<patFile>
                             parser.validPattern(excludeFilePatList, value, "excludeFile", cmdName);
                             break;
-                        case 'E':   // ExcludeDir=<pat>
+                        case 'E':   // ExcludeDir=<patFile>
                             parser.validPattern(excludeDirPatList, value, "ExcludeDir", cmdName);
                             break;
                         case 'f':   // format=<str>
@@ -454,10 +468,10 @@ int main(int argc, char* argv[]) {
                                 header = ParseUtil::convertSpecialChar(value);
                             }
                             break;
-                        case 'i':   // includeFile=<pat>
+                        case 'i':   // includeFile=<patFile>
                             parser.validPattern(includeFilePatList, value, "includeFile", cmdName);
                             break;
-                        case 'I':   // IncludeDir=<pat>
+                        case 'I':   // IncludeDir=<patFile>
                             parser.validPattern(includeDirPatList, value, "includeDir", cmdName);
                             break;
                         case 'p': // pick=<fromPat>;<toText>

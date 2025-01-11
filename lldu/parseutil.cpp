@@ -5,12 +5,6 @@
 // Desc: Parsing utility functions.
 //
 //-------------------------------------------------------------------------------------------------
-//
-// Author: Dennis Lang - 2024
-// https://landenlabs.com
-//
-// This file is part of lldupdir project.
-//
 // ----- License ----
 //
 // Copyright (c) 2024  Dennis Lang
@@ -38,6 +32,7 @@
 #include <iostream>
 #include <fstream>
 #include <regex>
+
 
 #ifdef HAVE_WIN
     #define strncasecmp _strnicmp
@@ -184,7 +179,7 @@ const char* ParseUtil::convertSpecialChar(const char* inPtr) {
             default:
                 Colors::showError("Warning: unrecognized escape sequence:", inPtr);
                 throw( "Warning: unrecognized escape sequence" );
-            case '\0': // Trailing slash 
+            case '\0': // Trailing slash
                 inPtr--;
                 break;
             case '\\':      // Double slash becomes single

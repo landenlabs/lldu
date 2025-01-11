@@ -7,8 +7,6 @@
 // Author: Dennis Lang - 2024
 // https://landenlabs.com
 //
-// This file is part of lldu  project.
-//
 // ----- License ----
 //
 // Copyright (c) 2024  Dennis Lang
@@ -39,10 +37,10 @@ const char EXTN_CHAR = '.';
 
 #ifdef HAVE_WIN
 #define byte win_byte_override  // Fix for c++ v17
-#include <Windows.h>
+#include <windows.h>
 #undef byte                     // Fix for c++ v17
 #include <io.h>
- 
+
 typedef unsigned short mode_t;
 
 static const mode_t S_IRUSR = mode_t(_S_IREAD);     //  read by user
@@ -170,7 +168,13 @@ const lstring Directory_files::SLASH2 = "//";
 
 //-------------------------------------------------------------------------------------------------
 Directory_files::Directory_files(const lstring& dirName) {
-    realpath(dirName.c_str(), my_fullname);
+    if (!DirUtil::fileExists(dirName)) {
+        // Remove any wildcard are extra characters.
+        DirUtil::getDir(my_baseDir, dirName);
+        realpath(my_baseDir.c_str(), my_fullname);
+    } else {
+        realpath(dirName.c_str(), my_fullname);
+    }
     my_baseDir = my_fullname;
     my_pDir = opendir(my_baseDir);
     my_is_more = (my_pDir != NULL);
@@ -293,13 +297,13 @@ bool DirUtil::deleteFile(bool dryRun, const char* inPath) {
             setPermission(inPath, S_IWUSR);
         err = remove(inPath);
     }
-    
+
     if (err != 0)
         std::cerr << strerror(errno) << " deleting " << inPath << std::endl;
     else
         std::cerr << "Deleted " << inPath << std::endl;
-    
-    
+
+
     return (err == 0);
 }
 
@@ -328,7 +332,7 @@ bool deleteFile(const char* path) {
 bool DirUtil::setPermission(const char* relPath, unsigned permission, bool setAllParts) {
     if (relPath == nullptr || strlen(relPath) <= 1)
         return true;
-    
+
     lstring dir;
     struct stat pathStat;
     int err = stat(relPath, &pathStat);
