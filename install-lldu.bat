@@ -30,7 +30,7 @@ if not exist "%prog%-ms\x64\Release\%prog%.exe" (
 )
 
 @echo.
-@echo Copy Release to d:\opt\bin
+@echo Copy Release to %dstdir%
 :: dir %prog%-ms\x64\Release\%prog%.exe
 copy %prog%-ms\x64\Release\%prog%.exe %dstdir%\%prog%.exe
 
