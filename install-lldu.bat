@@ -3,7 +3,7 @@
 set prog=lldu
 
 set dstdir=%bindir%
-if not exist "%dstdir" (
+if not exist "%dstdir%" (
  if exist c:\opt\bin  set dstdir=c:\opt\bin
  if exist d:\opt\bin  set dstdir=d:\opt\bin
 )
