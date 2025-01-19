@@ -80,6 +80,7 @@ static PatternList includeFilePatList;
 static PatternList excludeFilePatList;
 static PatternList includeDirPatList;
 static PatternList excludeDirPatList;
+static PatternList summaryDirPatList;
 static PickPatList pickPatList;
 static StringList fileDirList;
 
@@ -260,7 +261,7 @@ size_t FindFiles(const lstring& dirname, unsigned depth) {
             if ((maxDepth == 0 || depth < maxDepth)
                     && (!dryrun || depth < 1)
                     && !ParseUtil::FileMatches(fullname, excludeDirPatList, false)
-                    && ParseUtil::FileMatches(fullname, includeDirPatList, true) 
+                //    && ParseUtil::FileMatches(fullname, includeDirPatList, true) 
                     && !ParseUtil::FileMatches(name, excludeFilePatList, false)
                 //    && ParseUtil::FileMatches(name, includeFilePatList, true) 
             ) {
@@ -276,7 +277,10 @@ size_t FindFiles(const lstring& dirname, unsigned depth) {
                     prevT = endT;
                 }
 
-                if (fullname.find_first_of('?') == string::npos) {
+                if (fullname.find_first_of('?') == string::npos) { 
+                    if (summary && ParseUtil::FileMatches(fullname, summaryDirPatList, false)) {
+                        clearUsage();
+                    }
                     if (depth < MAX_DIR_DEPTH) {
                         fileCount += FindFiles(fullname, depth + 1);
                     }
@@ -286,10 +290,11 @@ size_t FindFiles(const lstring& dirname, unsigned depth) {
                     }
                 }
                 else {
+                    // '?' not valid part of file name path. 
                     std::cerr << "Invalid file name:" <<fullname << std::endl;
                 }
 
-                if (showTotals) {
+                if (showTotals || ParseUtil::FileMatches(fullname, summaryDirPatList, false)) {
                     if (isTable) {
                         buildTable(fullname);
                     } else { /* if (!total) */
@@ -336,7 +341,7 @@ void setSortBy(const char* value, bool forward) {
 //-------------------------------------------------------------------------------------------------
 void showHelp(const char* arg0) {
     const char* helpMsg =
-            "  Dennis Lang v2.5 (LandenLabs.com)_X_ " __DATE__ "\n\n"
+            "  Dennis Lang v2.6 (LandenLabs.com)_X_ " __DATE__ "\n\n"
             "_p_Des: Directory (disk) used space inventory \n"
             "_p_Use: lldu [options] directories...   or  files\n"
             "\n"
@@ -358,25 +363,31 @@ void showHelp(const char* arg0) {
             "   -_y_header=<header>                ; Def: Ext\\tCount\\tSize\\n \n"
             "   -_y_total                          ; Single report for all inputs \n"
             "   -_y_summary                        ; Single row for each path \n"
+            "   -_y_summary=<dirPat>               ; Sumarize matchnig dirs \n"
             "   -_y_table=count|size|links         ; Present results in table \n"
             "   -_y_divide                         ; Divide size by hardlink count \n"
             "\n"
             "   -_y_regex                       ; Use regex pattern not DOS pattern \n"
-            "   NOTE - Default DOS pattern converts * to .*, . to [.] and ? to . \n "
+            "   NOTE - Default DOS pattern internally treats * at .*, . at [.] and ? at . \n "
             "          If using -_y_regex specify before pattern options\n"
+            "          Use -_y_regex if you need advance pattern syntax \n"
             "   Example to ignore all dot directories and files: \n"
             "          -_y_regex -_y_exclude=\"[.].*\" \n"
+            "        or with DOS pattern\n"
+            "          -_y_exclude=\".*\" \n"
             "\n"
             " _p_Example:\n"
             "   lldu  -_y_sum -_y_Exc=*.git  * \n"
 #ifdef HAVE_WIN
             "   lldu  -_y_sum -_y_Exc=*\\\\.git  * \n"
-            "   lldu  -_y_sum -_y_Exc=*\\\\.(git||vs) * \n"
-            "   lldu  -_y_sum -_y_regex -_y_Exc=.*\\\\[.](git||vs) * \n"
+            "   lldu  -_y_sum -_y_Exc=*\\\\.(git|vs) * \n"
+            "   lldu  -_y_sum -_y_regex -_y_Exc=.*\\\\[.](git|vs) * \n"
+            "   lldu  -_y_regex -_y_sum=.*\\\\[.](git|vs) * \n"
 #else
             "   lldu  -_y_sum -_y_Exc='*/.git'  * \n"
-            "   lldu  -_y_sum -_y_Exc='*/.(git||vs)' * \n"
-            "   lldu  -_y_sum -_y_regex -_y_Exc='.*/[.](git||vs)' * \n"
+            "   lldu  -_y_sum -_y_Exc='*/.(git|vs)' * \n"
+            "   lldu  -_y_sum -_y_regex -_y_Exc='.*/[.](git|vs)' * \n"
+            "   lldu  -_y_regex -_y_sum='*/[.](git|vs)' * \n" 
 #endif
             "   lldu  -_y_sum -_y_regex -_y_exc=\"[.](git||vs)\" * \n"
             "   lldu '-_y_inc=*.bak' -_y_ex=foo.json '-_y_ex=*/subdir2' dir1/subdir dir2 *.txt file2.json \n"
@@ -487,8 +498,17 @@ int main(int argc, char* argv[]) {
                         case 's':
                             if (parser.validOption("separator", cmdName, false)) {
                                 separator = ParseUtil::convertSpecialChar(value);
-                            } else if (parser.validOption("sort", cmdName)) {
+                            } else if (parser.validOption("sort", cmdName, false)) {
                                 setSortBy(value, true);
+                            } else if (parser.validPattern(summaryDirPatList, value, "summary", cmdName)) {
+                                summary = true;
+#ifdef HAVE_WIN
+                                lstring incDirPat = value + Directory_files::SLASH2 + ".*";
+#else
+                                lstring incDirPat = value + Directory_files::SLASH + ".*";
+#endif
+                                std::regex pat = parser.ignoreCase ? std::regex(incDirPat, regex_constants::icase) : std::regex(incDirPat);
+                                includeDirPatList.push_back(pat);
                             }
                             break;
                         case 't':   // table=count|size|hardlinks

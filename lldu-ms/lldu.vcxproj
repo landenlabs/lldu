@@ -35,6 +35,10 @@
   <ItemGroup>
     <ResourceCompile Include="lldu.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="landenlabs.ico" />
+    <Image Include="landenlabs.png" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{411E89F7-2605-48E6-A471-ABDC05AD9BCC}</ProjectGuid>
