@@ -135,6 +135,7 @@ private:
 };
 
 enum DIR_TYPES { IS_FILE, IS_DIR_BEG, IS_DIR_END };
+enum LinkStatus { DRYRUN, ALREADY, DONE, FAIL_BACKUP, FAIL_LINK, FAIL_RESTORE, FAIL_DEL_BACKUP };
 
 namespace DirUtil {
  lstring& getDir(lstring& outName, const lstring& inPath);
@@ -145,6 +146,16 @@ namespace DirUtil {
  bool setPermission(const char* inPath, unsigned permission, bool setAllParts = false);
  size_t fileLength(const lstring& path);
  bool fileExists(const char* path);bool makeWriteableFile(const char* filePath, struct stat* info);
+
+    LinkStatus hardlink(bool dryRun, const char* masterPath, const char* linkPath);
+    void showLink(LinkStatus status, const char* masterPath, const char* linkPath);
+    struct LinkCnts {
+        unsigned int already;
+        unsigned int completed;
+        unsigned int failed;
+    };
+    LinkCnts getLinkCnts();
+
 inline bool isWriteableFile(const struct stat& info) {
 #ifdef HAVE_WIN
     size_t mask = _S_IFREG + _S_IWRITE;

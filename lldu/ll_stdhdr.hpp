@@ -7,8 +7,6 @@
 // Author: Dennis Lang - 2024
 // https://landenlabs.com
 //
-// This file is part of lldu project.
-//
 // ----- License ----
 //
 // Copyright (c) 2024  Dennis Lang
@@ -38,7 +36,7 @@ typedef unsigned short  UShort;
     #define HAVE_WIN
     #define NOMINMAX
     #define _CRT_SECURE_NO_WARNINGS   // define before all includes
-    // typedef unsigned long DWORD;
+    typedef unsigned long DWORD;
 #else
     typedef unsigned int DWORD;
 #endif

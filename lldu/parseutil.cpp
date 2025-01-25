@@ -95,10 +95,7 @@ bool ParseUtil::validPattern(PatternList& outList, lstring& value, const char* v
             ReplaceAll(value, "*", ".*");
             ReplaceAll(value, "?", ".");
         }
-        std::regex patEx = getRegEx(value);
-        // if (std::find(outList.begin(), outList.end(), patEx) == outList.end()) {
-            outList.push_back(patEx);
-        // }
+        outList.push_back(getRegEx(value));
     }
     return isOk;
 }

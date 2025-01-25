@@ -54,7 +54,7 @@
 
 #define _POSIX_C_SOURCE 200809L
 
-#define VERSION "v2.7"
+#define VERSION "v2.8"
 
 #ifdef HAVE_WIN
 #include <direct.h> // _getcwd
@@ -614,7 +614,7 @@ int main(int argc, char* argv[]) {
 
             if (isTable) {
                 printTable();
-            } else 
+            } else {
                 printUsage(""); // print grand total
             }
             
