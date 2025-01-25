@@ -70,7 +70,7 @@ bool ParseUtil::validOption(const char* validCmd, const char* possibleCmd, bool 
     size_t validLen = strlen(validCmd);
     size_t possibleLen = strlen(possibleCmd);
 
-    if (strncasecmp(validCmd, possibleCmd, std::min(validLen, possibleLen)) == 0) {
+    if (possibleLen <= validLen && strncasecmp(validCmd, possibleCmd, std::min(validLen, possibleLen)) == 0) {
         parseArgSet.insert(validCmd);
         return true;
     }

@@ -54,6 +54,8 @@
 
 #define _POSIX_C_SOURCE 200809L
 
+#define VERSION "v2.7"
+
 #ifdef HAVE_WIN
 #include <direct.h> // _getcwd
 #define chdir _chdir
@@ -135,7 +137,9 @@ std::string separator = "\t";
 std::string format = "%8.8e\t%8c\t%15s\n";        // %s\t%8d\t%15d\n";
 std::string header = "     Ext\t   Count\t      Size\n";
 std::string tformat = format;
-std::string sformat = "%10S %n\n";
+// std::string sformat = "%10S %n\n";
+std::string sformat = "%15s Files:%5c \t%n \n";
+
 int setBothFmt = 0;
 time_t startT, prevT;
 
@@ -341,15 +345,16 @@ void setSortBy(const char* value, bool forward) {
 //-------------------------------------------------------------------------------------------------
 void showHelp(const char* arg0) {
     const char* helpMsg =
-            "  Dennis Lang v2.6 (LandenLabs.com)_X_ " __DATE__ "\n\n"
+            "  Dennis Lang " VERSION " (LandenLabs.com)_X_ " __DATE__ "\n\n"
             "_p_Des: Directory (disk) used space inventory \n"
             "_p_Use: lldu [options] directories...   or  files\n"
             "\n"
             " _p_Options (only first unique characters required, options can be repeated):\n"
-            "   -_y_includeFile=<filePattern>\n"
-            "   -_y_excludeFile=<filePattern>\n"
-            "   -_y_IncludeDir=<dirPattern>        ; Match against full dir path \n"
-            "   -_y_ExcludeDir=<dirPattern>        ; Match against full dir path \n"
+            "   -_y_includeItem=<fileOrDirPattern>\n"
+            "   -_y_excludeItem=<fileOrDirPattern> ; Exclude file or directory item\n"
+            "   Note - following start with uppercase I or E \n"
+            "   -_y_IncludePath=<pathPattern>      ; Match against full dir path \n"
+            "   -_y_ExcludePath=<pathPattern>      ; Match against full dir path \n"
             "   NOTE - Patterns above - remember to escape backslash as \\\\ \n"
             "   -_y_verbose\n"
             "   -_y_progress                       ; Show scan progress every 30 sec \n"
@@ -381,6 +386,7 @@ void showHelp(const char* arg0) {
 #ifdef HAVE_WIN
             "   lldu  -_y_sum -_y_Exc=*\\\\.git  * \n"
             "   lldu  -_y_sum -_y_Exc=*\\\\.(git|vs) * \n"
+            "   lldu  -_y_sum -_y_exe=.git -_y_exe=.vs  * \n"
             "   lldu  -_y_sum -_y_regex -_y_Exc=.*\\\\[.](git|vs) * \n"
             "   lldu  -_y_regex -_y_sum=.*\\\\[.](git|vs) * \n"
 #else
@@ -390,10 +396,12 @@ void showHelp(const char* arg0) {
             "   lldu  -_y_regex -_y_sum='*/[.](git|vs)' * \n" 
 #endif
             "   lldu  -_y_sum -_y_regex -_y_exc=\"[.](git||vs)\" * \n"
+            "   lldu  -_y_formatSum=\"%15s Files:%5c Links:%l\\t %n\\n\" -sum ..\\*"
+            "\n"
             "   lldu '-_y_inc=*.bak' -_y_ex=foo.json '-_y_ex=*/subdir2' dir1/subdir dir2 *.txt file2.json \n"
             "   lldu '-_y_exclude=\\.*' '-_y_pick=[^.]+[.](.{4,});other' . \n"
             "   lldu '-_y_exclude=\\.*' '-_y_pick=[^.]+[.](.{4,});other' -_y_sort=size -_y_rev=count . \n"
-            "   lldu  -_y_rev=size -_y_rev=count -_y_format='%8e %6c %10s\\n' -_y_for='\\n' -_y_head=' ' . \n"
+            "   lldu  -_y_rev=size -_y_rev=count -_y_format='%8e %6c %20s\\n' -_y_for='\\n' -_y_head=' ' . \n"
             "   lldu  -_y_format=\"%9.9e\\t%8c\\t%15s\\n\" -_y_format=\"%9.9e\\t%8c\\t%15s\\n\"  . \n"
             "   lldu  -_y_FormatSummary=\"%8.8n\\t%8c\\t%15s\\n\"  . \n"
             "   lldu  -_y_ver -_y_Include='*/[.][a-zA-Z]*' ~/ \n"
@@ -405,7 +413,7 @@ void showHelp(const char* arg0) {
             "    e=file extension, c=count, s=size, l=links \n"
             "    lowercase c,s,l  format with commas \n"
             "    uppercase  C,S,L  format without commas \n"
-            "    precede with width, ex %12.12e\\t%8c\\t%10s\\n \n"
+            "    precede with width, ex %12.12e\\t%8c\\t%15s\\n \n"
             "\n"
             " _p_Output:\n"
             "    Ext  Count  Size\n"
@@ -434,7 +442,9 @@ int main(int argc, char* argv[]) {
         setlocale(LC_ALL, "");
 
         getcwd(CWD_BUF, sizeof(CWD_BUF));
-        CWD_LEN = (unsigned)strlen(CWD_BUF) + 1;
+        CWD_LEN = (unsigned)strlen(CWD_BUF);
+        CWD_BUF[CWD_LEN++] = Directory_files::SLASH_CHAR;
+        CWD_BUF[CWD_LEN] = '\0';
 
         bool doParseCmds = true;
         string endCmds = "--";
@@ -455,22 +465,24 @@ int main(int argc, char* argv[]) {
                                 maxDepth = atoi(value);
                             }
                             break;
-                        case 'e':   // excludeFile=<patFile>
-                            parser.validPattern(excludeFilePatList, value, "excludeFile", cmdName);
+                        case 'e':   // excludeItem=<patFile>
+                            parser.validPattern(excludeFilePatList, value, "excludeItem", cmdName);
                             break;
-                        case 'E':   // ExcludeDir=<patFile>
-                            parser.validPattern(excludeDirPatList, value, "ExcludeDir", cmdName);
+                        case 'E':   // ExcludePath=<patFile>
+                            parser.validPattern(excludeDirPatList, value, "ExcludePath", cmdName);
                             break;
                         case 'f':   // format=<str>
-                            if (parser.validOption("format", cmdName)) {
+                            if (parser.validOption("format", cmdName, false)) {
                                 if (setBothFmt++ == 0)
                                     tformat = format = ParseUtil::convertSpecialChar(value);
                                 else
                                     tformat = ParseUtil::convertSpecialChar(value);
+                            } else if (parser.validOption("formatSummary", cmdName)) {
+                                sformat = ParseUtil::convertSpecialChar(value);
                             }
                             break;
                         case 'F':
-                             if (parser.validOption("FormatSummary", cmdName)) {
+                            if (parser.validOption("formatSummary", cmdName)) {
                                 sformat = ParseUtil::convertSpecialChar(value);
                             }
                             break;
@@ -479,11 +491,11 @@ int main(int argc, char* argv[]) {
                                 header = ParseUtil::convertSpecialChar(value);
                             }
                             break;
-                        case 'i':   // includeFile=<patFile>
-                            parser.validPattern(includeFilePatList, value, "includeFile", cmdName);
+                        case 'i':   // includeItem=<patFile>
+                            parser.validPattern(includeFilePatList, value, "includeItem", cmdName);
                             break;
-                        case 'I':   // IncludeDir=<patFile>
-                            parser.validPattern(includeDirPatList, value, "includeDir", cmdName);
+                        case 'I':   // includePath=<patFile>
+                            parser.validPattern(includeDirPatList, value, "includePath", cmdName);
                             break;
                         case 'p': // pick=<fromPat>;<toText>
                             if (parser.validOption("pick", cmdName)) {
@@ -500,7 +512,7 @@ int main(int argc, char* argv[]) {
                                 separator = ParseUtil::convertSpecialChar(value);
                             } else if (parser.validOption("sort", cmdName, false)) {
                                 setSortBy(value, true);
-                            } else if (parser.validPattern(summaryDirPatList, value, "summary", cmdName)) {
+                            } else if (parser.validPattern(summaryDirPatList, value, "summary", cmdName, false)) {
                                 summary = true;
 #ifdef HAVE_WIN
                                 lstring incDirPat = value + Directory_files::SLASH2 + ".*";
@@ -509,7 +521,7 @@ int main(int argc, char* argv[]) {
 #endif
                                 std::regex pat = parser.ignoreCase ? std::regex(incDirPat, regex_constants::icase) : std::regex(incDirPat);
                                 includeDirPatList.push_back(pat);
-                            }
+                            } 
                             break;
                         case 't':   // table=count|size|hardlinks
                             if (parser.validOption("table", cmdName)) {
@@ -602,7 +614,7 @@ int main(int argc, char* argv[]) {
 
             if (isTable) {
                 printTable();
-            } else {
+            } else 
                 printUsage(""); // print grand total
             }
             
@@ -627,9 +639,9 @@ int main(int argc, char* argv[]) {
 
 //-------------------------------------------------------------------------------------------------
 void clearUsage() {
+    // std::cerr << "Clear usage\n";
     duList.clear();
 }
-
 
 // ---------------------------------------------------------------------------
 #include <locale>
@@ -726,9 +738,11 @@ void printParts(
     const int NONE = 12345;
     lstring itemFmt;
 #ifdef HAVE_WIN
-    const char* FMT_NUM = "lu";
+    const char* FMT_NUMB = "zu";
+    const char* FMT_COMMA = "zu";
 #else
-    const char* FMT_NUM = "'lu";  //  "`lu" linux supports ` to add commas
+    const char* FMT_COMMA = "'lu";  //  "`lu" linux supports ` to add commas
+    const char* FMT_NUMB = "lu";     
 #endif
  
     char* fmt = (char*)customFmt;
@@ -758,29 +772,29 @@ void printParts(
                 break;
             case 'C':   // Count
                 // DisableCommaCout();
-                itemFmt += "lu";        // unsigned long formatter
-                printf(itemFmt, count); // print with commas
+                itemFmt += FMT_NUMB;        // unsigned long formatter
+                printf(itemFmt, count);     // print with commas
                 break;
             case 'c':   // Count
-                itemFmt += FMT_NUM;       // unsigned long formatter
-                PRINTF(itemFmt, count); // print with commas
+                itemFmt += FMT_COMMA;       // unsigned long formatter
+                PRINTF(itemFmt, count);     // print with commas
                 break;
             case 'L':   // Links
                 // DisableCommaCout();
-                itemFmt += "lu";        // unsigned long formatter
+                itemFmt += FMT_NUMB;        // unsigned long formatter
                 printf(itemFmt, links);
                 break;
             case 'l':   // Links
-                itemFmt += FMT_NUM;       // unsigned long formatter
+                itemFmt += FMT_COMMA;       // unsigned long formatter
                 PRINTF(itemFmt, links);
                 break;
             case 'S':   // Size
                 // DisableCommaCout();
-                itemFmt += "lu";       // unsigned long formatter
+                itemFmt += FMT_NUMB;        // unsigned long formatter
                 printf(itemFmt, size);
                 break;
             case 's':   // Size
-                itemFmt += FMT_NUM;       // unsigned long formatter
+                itemFmt += FMT_COMMA;       // unsigned long formatter
                 PRINTF(itemFmt, size);
                 break;
 
@@ -842,7 +856,7 @@ void printUsage(const std::string& filepath) {
             printParts(sformat.c_str(), "_GTotal", gtotalCount, gtotalLinks, gtotalFileSize);
         } else {
             unsigned off = 0;
-            if (!showAbsPath && strncmp(filepath.c_str(), CWD_BUF, CWD_LEN-1) == 0) 
+            if (!showAbsPath && filepath.length() > CWD_LEN+1 && strncmp(filepath.c_str(), CWD_BUF, CWD_LEN) == 0) 
                 off = CWD_LEN;
             
             clearProgress();
@@ -858,6 +872,7 @@ void printUsage(const std::string& filepath) {
             // std::cout << iter->first << separator << iter->second.count << separator << iter->second.diskSize << std::endl;
         }
     }
+
 }
 
 //-------------------------------------------------------------------------------------------------
