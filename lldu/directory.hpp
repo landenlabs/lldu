@@ -75,14 +75,13 @@
 #endif
 
 #ifdef HAVE_WIN
-    const char SLASH_CHAR('\\');
     #include <assert.h>
     #define strncasecmp _strnicmp
     #if !defined(S_ISREG) && defined(S_IFMT) && defined(S_IFREG)
         #define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
+        #define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
     #endif
 #else
-    const char SLASH_CHAR('/');
     #include <sys/fcntl.h>
 #endif
 

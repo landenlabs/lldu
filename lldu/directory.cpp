@@ -195,7 +195,12 @@ Directory_files::~Directory_files() {
 //-------------------------------------------------------------------------------------------------
 bool Directory_files::more() {
     if (my_is_more) {
+        errno = 0;
         my_pDirEnt = readdir(my_pDir);
+        if (my_pDirEnt == nullptr && errno != 0) {
+            int error = errno;
+            std::cerr << my_baseDir <<  " Eror=" << strerror(error) << std::endl;
+        }
         my_is_more = my_pDirEnt != NULL;
         if (my_is_more) {
             if (my_pDirEnt->d_type == DT_DIR) {
@@ -248,7 +253,7 @@ bool DirUtil::makeWriteableFile(const char* filePath, struct stat* info) {
 //-------------------------------------------------------------------------------------------------
 // [static] Extract directory part from path.
 lstring& DirUtil::getDir(lstring& outDir, const lstring& inPath) {
-    size_t nameStart = inPath.rfind(SLASH_CHAR);
+    size_t nameStart = inPath.rfind(Directory_files::SLASH_CHAR);
     if (nameStart == string::npos)
         outDir.clear();
     else
@@ -259,7 +264,7 @@ lstring& DirUtil::getDir(lstring& outDir, const lstring& inPath) {
 //-------------------------------------------------------------------------------------------------
 // Extract name part from path.
 lstring& DirUtil::getName(lstring& outName, const lstring& inPath) {
-    size_t nameStart = inPath.rfind(SLASH_CHAR);
+    size_t nameStart = inPath.rfind(Directory_files::SLASH_CHAR);
     if (nameStart == std::string::npos)
         outName = inPath;
     else
