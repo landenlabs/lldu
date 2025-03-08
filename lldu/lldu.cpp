@@ -54,7 +54,7 @@
 
 #define _POSIX_C_SOURCE 200809L
 
-#define VERSION "v2.8"
+#define VERSION "v2.9"
 
 #ifdef HAVE_WIN
 #include <direct.h> // _getcwd
@@ -109,6 +109,8 @@ struct DuInfo {
     size_t fileSize;
     size_t hardlinks;
     DuInfo() : count(0), diskSize(0), fileSize(0), hardlinks(0) {}
+    DuInfo(std::string _str, size_t _count, size_t _diskSize, size_t _fileSize, size_t _links ) :
+        ext(_str), count(_count), diskSize(_diskSize), fileSize(_fileSize), hardlinks(_links) {}
 };
 
 typedef std::map<std::string, DuInfo> DuList;
@@ -131,7 +133,8 @@ int SortByExt(const DuInfo& lhs, const DuInfo& rhs)  { return (lhs.ext.compare(r
 int SortByCount (const DuInfo& lhs, const DuInfo& rhs)  { return (int)(lhs.count - rhs.count);}
 int SortByDiskSize(const DuInfo& lhs, const DuInfo& rhs)   { return (int)(lhs.diskSize - rhs.diskSize);}
 int SortByFileSize(const DuInfo& lhs, const DuInfo& rhs)   { return (int)(lhs.fileSize - rhs.fileSize);}
-SortBy* sortBy = new SortBy(nullptr, SortByExt, true);
+SortBy* defSortBy = new SortBy(nullptr, SortByExt, true);
+SortBy* sortBy = nullptr;
 
 std::string separator = "\t";
 std::string format = "%8.8e\t%8c\t%15s\n";        // %s\t%8d\t%15d\n";
@@ -368,7 +371,7 @@ void showHelp(const char* arg0) {
             "   -_y_header=<header>                ; Def: Ext\\tCount\\tSize\\n \n"
             "   -_y_total                          ; Single report for all inputs \n"
             "   -_y_summary                        ; Single row for each path \n"
-            "   -_y_summary=<dirPat>               ; Sumarize matchnig dirs \n"
+            "   -_y_summary=<dirPat>               ; Sumarize matching dirs \n"
             "   -_y_table=count|size|links         ; Present results in table \n"
             "   -_y_divide                         ; Divide size by hardlink count \n"
             "\n"
@@ -494,8 +497,8 @@ int main(int argc, char* argv[]) {
                         case 'i':   // includeItem=<patFile>
                             parser.validPattern(includeFilePatList, value, "includeItem", cmdName);
                             break;
-                        case 'I':   // includePath=<patFile>
-                            parser.validPattern(includeDirPatList, value, "includePath", cmdName);
+                        case 'I':   // IncludePath=<patFile>
+                            parser.validPattern(includeDirPatList, value, "IncludePath", cmdName);
                             break;
                         case 'p': // pick=<fromPat>;<toText>
                             if (parser.validOption("pick", cmdName)) {
@@ -813,6 +816,8 @@ size_t gtotalCount = 0;
 size_t gtotalLinks = 0;
 size_t gtotalDiskSize = 0;
 size_t gtotalFileSize = 0;
+std::vector<DuInfo> summaryInfos;
+
 void printUsage(const std::string& filepath) {
     size_t totalCount = 0;
     size_t totalLinks = 0;
@@ -831,6 +836,9 @@ void printUsage(const std::string& filepath) {
     for (const auto &info : duList)
         vecDuList.push_back(info.second);
 
+    if (sortBy == nullptr)
+        sortBy = defSortBy;
+    
     std::sort(vecDuList.begin(), vecDuList.end(), *sortBy);
     for (auto iter = vecDuList.cbegin(); iter != vecDuList.cend(); iter++) {
         if (! summary && ! total) {
@@ -853,6 +861,17 @@ void printUsage(const std::string& filepath) {
 
     if (summary) {
         if (filepath.empty()) {
+            if (summaryInfos.size() > 0) {
+                std::sort(summaryInfos.begin(), summaryInfos.end(), *sortBy);
+                for (auto iter = summaryInfos.cbegin(); iter != summaryInfos.cend(); iter++) {
+                    string sumPath = iter->ext;
+                    unsigned off = 0;
+                    if (!showAbsPath && sumPath.length() > CWD_LEN+1 && strncmp(sumPath.c_str(), CWD_BUF, CWD_LEN) == 0)
+                        off = CWD_LEN;
+                    printParts(sformat.c_str(), sumPath.c_str() + off, iter->count, iter->hardlinks, iter->fileSize);
+                }
+                summaryInfos.clear();
+            }
             printParts(sformat.c_str(), "_GTotal", gtotalCount, gtotalLinks, gtotalFileSize);
         } else {
             unsigned off = 0;
@@ -860,7 +879,11 @@ void printUsage(const std::string& filepath) {
                 off = CWD_LEN;
             
             clearProgress();
-            printParts(sformat.c_str(), filepath.c_str() + off, totalCount, totalLinks, totalFileSize);
+            if (sortBy == nullptr) {
+                printParts(sformat.c_str(), filepath.c_str() + off, totalCount, totalLinks, totalFileSize);
+            } else {
+                summaryInfos.push_back(DuInfo(filepath, totalCount, totalDiskSize, totalFileSize, totalLinks));
+            }
         }
     } else {
         if (tformat.length() > 0) {
@@ -872,8 +895,9 @@ void printUsage(const std::string& filepath) {
             // std::cout << iter->first << separator << iter->second.count << separator << iter->second.diskSize << std::endl;
         }
     }
-
 }
+
+
 
 //-------------------------------------------------------------------------------------------------
 template <class TT> void appendAt(size_t pos, std::vector<TT>& list, TT data, TT filler) {

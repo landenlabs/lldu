@@ -14,9 +14,25 @@
             filePath = "lldu/lldu.cpp"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "422"
-            endingLineNumber = "422"
-            landmarkName = "main(argc, argv)"
+            startingLineNumber = "425"
+            endingLineNumber = "425"
+            landmarkName = "showHelp(arg0)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "CA478076-E22D-43D5-B802-EABF4B8F8504"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "lldu/lldu.cpp"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "842"
+            endingLineNumber = "842"
+            landmarkName = "printUsage(filepath)"
             landmarkType = "9">
          </BreakpointContent>
       </BreakpointProxy>
