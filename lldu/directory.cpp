@@ -153,8 +153,13 @@ bool Directory_files::is_directory() const {
 
 //-------------------------------------------------------------------------------------------------
 const char* Directory_files::name() const {
-    return (my_dir_hnd != INVALID_HANDLE_VALUE) ?
-        my_dirent.cFileName : NULL;
+    if (my_dir_hnd == INVALID_HANDLE_VALUE)
+        return nullptr;
+
+    if (strchr(my_dirent.cFileName, '?') == nullptr)
+        return my_dirent.cFileName;
+
+    return my_dirent.cAlternateFileName;
 }
 
 //-------------------------------------------------------------------------------------------------

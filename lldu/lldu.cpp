@@ -210,7 +210,7 @@ bool ExamineFile(const lstring& filepath, const lstring& filename) {
         duInfo.fileSize += filestat.st_size;
     }
 
-    return false;
+    return true;
 }
 
 
@@ -231,6 +231,13 @@ size_t FindFile(const lstring& fullname) {
             fileCount++;
             if (showFile)
                 std::cout << fullname << std::endl;
+        } else {
+            int e = errno;
+            if (e == EINVAL) {
+                cerr << "Invalid " << fullname << std::endl;
+            } else if (e == ENOENT) {
+                cerr << "Special characters or no permission to: " << fullname << std::endl;
+            }
         }
     }
 
