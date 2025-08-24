@@ -41,7 +41,7 @@
 #include "signals.hpp"
 #include "parseutil.hpp"
 #include "directory.hpp"
-
+#include "storage.hpp"
 
 #include <assert.h>
 #include <fstream>
@@ -98,6 +98,7 @@ static bool total = false;
 static bool dryrun = false;
 static bool divByHardlink = false;
 static bool progress = false;
+static bool listDev = false;
 static size_t progressLen = 0;
 
 const size_t MAX_DIR_DEPTH = 200;
@@ -391,6 +392,9 @@ void showHelp(const char* arg0) {
             "        or with DOS pattern\n"
             "          -_y_exclude=\".*\" \n"
             "\n"
+            " _p_Special Commands:\n"
+            "    -_y_list                          ; List devices & storage size "
+            "\n\n"
             " _p_Example:\n"
             "   lldu  -_y_sum -_y_Exc=*.git  * \n"
 #ifdef HAVE_WIN
@@ -560,6 +564,9 @@ int main(int argc, char* argv[]) {
                             return 0;
                         }
                         break;
+                    case 'l':   // -list
+                        listDev = parser.validOption("list", cmdName);
+                        break;
                     case 'n':   // -n (dry run)
                         dryrun = true;
                         break;
@@ -599,43 +606,48 @@ int main(int argc, char* argv[]) {
             addPicker("..*[.](.+);$1");
         }
 
-        if (parser.patternErrCnt == 0 && parser.optionErrCnt == 0 && fileDirList.size() != 0) {
-            ParseUtil::fmtDateTime(timeStr, startT);
-            prevT = startT;
-            if (! summary)
-                std::cerr <<  Colors::colorize("_G_ +Start ") << timeStr << Colors::colorize("_X_\n");
+       
+        if (parser.patternErrCnt == 0 && parser.optionErrCnt == 0) {
+            if (listDev) {
+                Storage::ListStorageSizes();
+            } else if (fileDirList.size() != 0) {
+                ParseUtil::fmtDateTime(timeStr, startT);
+                prevT = startT;
+                if (! summary)
+                    std::cerr << Colors::colorize("_G_ +Start ") << timeStr << Colors::colorize("_X_\n");
 
-            if (fileDirList.size() == 1 && fileDirList[0] == "-") {
-                string filePath;
-                while (std::getline(std::cin, filePath)) {
-                    FindFiles(filePath, 0);
-                }
-            } else {
-                for (auto const& filePath : fileDirList) {
-                    FindFiles(filePath, 0);
-                    if (isTable) {
-                        buildTable(filePath);
-                    } else { /* if (!total) */
-                        printUsage(filePath);
+                if (fileDirList.size() == 1 && fileDirList[0] == "-") {
+                    string filePath;
+                    while (std::getline(std::cin, filePath)) {
+                        FindFiles(filePath, 0);
                     }
-                    clearUsage();
+                } else {
+                    for (auto const& filePath : fileDirList) {
+                        FindFiles(filePath, 0);
+                        if (isTable) {
+                            buildTable(filePath);
+                        } else { /* if (!total) */
+                            printUsage(filePath);
+                        }
+                        clearUsage();
+                    }
                 }
-            }
 
-            if (isTable) {
-                printTable();
-            } else {
-                printUsage(""); // print grand total
-            }
-            
-            if (! summary) {
-                time_t endT;
-                ParseUtil::fmtDateTime(timeStr, endT);
-                std::cerr <<  Colors::colorize("_G_ +End ")
-                    << timeStr
-                    << ", Elapsed "
-                    << std::difftime(endT, startT)
-                    << Colors::colorize(" (sec)_X_\n");
+                if (isTable) {
+                    printTable();
+                } else {
+                    printUsage(""); // print grand total
+                }
+
+                if (! summary) {
+                    time_t endT;
+                    ParseUtil::fmtDateTime(timeStr, endT);
+                    std::cerr << Colors::colorize("_G_ +End ")
+                        << timeStr
+                        << ", Elapsed "
+                        << std::difftime(endT, startT)
+                        << Colors::colorize(" (sec)_X_\n");
+                }
             }
         } else {
             // showHelp(argv[0]);
