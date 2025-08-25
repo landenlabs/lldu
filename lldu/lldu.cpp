@@ -89,7 +89,7 @@ static StringList fileDirList;
 static lstring tableType = "count";
 static bool isTable = false;        // -table=count|size|hardlink
 
-static bool showFile = true;
+static bool showFile = false;
 static bool verbose = false;
 static unsigned maxDepth = 0;
 static bool summary = false;
