@@ -436,6 +436,25 @@ int ListMediaNoAdmin() {
     return 0;
 }
 
+
+/*
+`\\.\` (Device Namespace):
+ * This prefix, also known as the "device namespace," allows you to access devices and objects within
+   the operating system's kernel, similar to how /dev works in Linux.
+ * Paths starting with `\\.\` are normalized, meaning they are converted to a standard format,
+   and the path components like "." and ".." are resolved.
+ * Examples include accessing a physical drive (\\.\C:) or a named pipe (\\.\Pipe\MyPipe).
+ * You can browse the contents of the device namespace using tools like WinObjEx.
+
+\\? (Extended Path):
+ * This prefix, also known as the "extended path," bypasses all path normalization,
+   meaning the path is passed to the file system verbatim.
+ * This allows you to use paths longer than the standard MAX_PATH limit (260 characters).
+ * You can use forward slashes (/) in the path, which are not allowed in standard paths.
+ * Examples include accessing a file with a very long name (\\?\C:\Long\Path\To\A\File.txt).
+ * It's important to note that the \\? prefix is only for absolute paths, not relative paths.
+ *
+*/
 // Requires admin privilege
 int ListStorageDevicesWithAdmin() {
     std::cout << "Listing all physical disk drives..." << std::endl;
@@ -534,6 +553,25 @@ bool getProperty(const HDEVINFO& hDevInfo, SP_DEVINFO_DATA& devInfoData, DWORD p
     return false;
 }
 
+
+/*
+`\\.\` (Device Namespace):
+ * This prefix, also known as the "device namespace," allows you to access devices and objects within
+   the operating system's kernel, similar to how /dev works in Linux.
+ * Paths starting with `\\.\` are normalized, meaning they are converted to a standard format,
+   and the path components like "." and ".." are resolved.
+ * Examples include accessing a physical drive (\\.\C:) or a named pipe (\\.\Pipe\MyPipe).
+ * You can browse the contents of the device namespace using tools like WinObjEx.
+
+\\? (Extended Path):
+ * This prefix, also known as the "extended path," bypasses all path normalization,
+   meaning the path is passed to the file system verbatim.
+ * This allows you to use paths longer than the standard MAX_PATH limit (260 characters).
+ * You can use forward slashes (/) in the path, which are not allowed in standard paths.
+ * Examples include accessing a file with a very long name (\\?\C:\Long\Path\To\A\File.txt).
+ * It's important to note that the \\? prefix is only for absolute paths, not relative paths.
+ *
+*/
 // Requires admin privilege
 std::vector<StorageDevice> getStorageDevicesWithAdmin() {
     std::vector<StorageDevice> devices;
