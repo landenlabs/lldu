@@ -138,9 +138,9 @@ SortBy* defSortBy = new SortBy(nullptr, SortByExt, true);
 SortBy* sortBy = nullptr;
 
 std::string separator = "\t";
-std::string format = "%8.8e\t%8c\t%15s\n";        // %s\t%8d\t%15d\n";
+std::string formatDef = "%8.8e\t%8c\t%15s\n";        // %s\t%8d\t%15d\n";
 std::string header = "     Ext\t   Count\t      Size\n";
-std::string tformat = format;
+std::string tformat = formatDef;
 // std::string sformat = "%10S %n\n";
 std::string sformat = "%15s Files:%5c \t%n \n";
 
@@ -488,7 +488,7 @@ int main(int argc, char* argv[]) {
                         case 'f':   // format=<str>
                             if (parser.validOption("format", cmdName, false)) {
                                 if (setBothFmt++ == 0)
-                                    tformat = format = ParseUtil::convertSpecialChar(value);
+                                    tformat = formatDef = ParseUtil::convertSpecialChar(value);
                                 else
                                     tformat = ParseUtil::convertSpecialChar(value);
                             } else if (parser.validOption("formatSummary", cmdName)) {
@@ -861,8 +861,8 @@ void printUsage(const std::string& filepath) {
     std::sort(vecDuList.begin(), vecDuList.end(), *sortBy);
     for (auto iter = vecDuList.cbegin(); iter != vecDuList.cend(); iter++) {
         if (! summary && ! total) {
-            if (format.length() > 0) {
-                printParts(format.c_str(), iter->ext.c_str(), iter->count, iter->hardlinks, iter->diskSize);
+            if (formatDef.length() > 0) {
+                printParts(formatDef.c_str(), iter->ext.c_str(), iter->count, iter->hardlinks, iter->diskSize);
             } else {
                 // std::cout << iter->first << separator << iter->second.count << separator << iter->second.diskSize << std::endl;
             }

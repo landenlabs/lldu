@@ -7,14 +7,14 @@
 #include <regex>
 #include <iomanip>
 #include <string>
-
+#include <format>
 
 #ifdef HAVE_WIN
 #define byte win_byte_override  // Fix for c++ v17
 #include <windows.h>
 #undef byte                     // Fix for c++ v17
 #include <winioctl.h>
-#include <format>
+
 
 #include <vector>
 #include <SetupAPI.h>
@@ -645,8 +645,41 @@ void Storage::ListStorageSizes() {
     }
 }
 
-#else
-// You can list connected storage devices on Linux using C++17 by interacting with 
+#endif
+
+#ifdef __linux__
+std::vector<StorageDevice> getStorageDevices() {
+    std::vector<StorageDevice> devices;
+    DIR *dir;
+    struct dirent *ent;
+
+    if ((dir = opendir("/sys/block")) != NULL) {
+        while ((ent = readdir(dir)) != NULL) {
+            std::string name = ent->d_name;
+            if (name == "." || name == "..") {
+                continue;
+            }
+
+            std::string size_path = "/sys/block/" + name + "/size";
+            FILE *fp = fopen(size_path.c_str(), "r");
+            if (fp) {
+                long long blocks;
+                if (fscanf(fp, "%lld", &blocks) == 1) {
+                    devices.push_back({name, blocks * 512});
+                }
+                fclose(fp);
+            }
+        }
+        closedir(dir);
+    } else {
+        std::cerr << "Error: Could not open /sys/block." << std::endl;
+    }
+    return devices;
+}
+#endif
+
+#ifdef HAVE_LINUX2
+// You can list connected storage devices on Linux using C++17 by interacting with
 // the / proc / mounts file. This approach is a lightweight, effective way to get 
 // information similar to the df command without relying on external commands. 
 // 
@@ -658,6 +691,7 @@ void Storage::ListStorageSizes() {
 #include <tuple>
 #include <numeric>
 #include <filesystem>
+#include <sstream>
 
 // A struct to hold device information
 struct StorageDevice {
@@ -688,7 +722,7 @@ unsigned long long get_directory_size(const std::string& path) {
 }
 
 // Function to get device information
-std::vector<StorageDevice> list_storage_devices() {
+std::vector<StorageDevice> getStorageDevices() {
     std::vector<StorageDevice> devices;
     std::ifstream mounts_file("/proc/mounts");
     if (!mounts_file) {
@@ -718,7 +752,9 @@ std::vector<StorageDevice> list_storage_devices() {
 }
 
 // Function to print the device information
-void print_devices(const std::vector<StorageDevice>& devices) {
+void Storage::ListStorageSizes() {
+    std::vector<StorageDevice> devices = getStorageDevices();
+    
     if (devices.empty()) {
         std::cout << "No storage devices found." << std::endl;
         return;
@@ -735,4 +771,224 @@ void print_devices(const std::vector<StorageDevice>& devices) {
     }
 }
 
+#endif
+
+#if defined(TARGET_OS_OSX) || defined(__APPLE__)
+
+#include <iostream>
+#include <iomanip>
+#include <vector>
+#include <string>
+
+#include <CoreFoundation/CoreFoundation.h>
+#include <IOKit/IOKitLib.h>
+#include <IOKit/storage/IOStorageDeviceCharacteristics.h>
+#include <IOKit/IOBSD.h>
+
+struct StorageDevice {
+    std::string name;
+    std::string vendor;
+    std::string model;
+    bool open, writable, removable;
+    long long sizeBytes;
+};
+
+
+std::vector<StorageDevice> getStorageDevices() {
+    std::vector<StorageDevice> devices;
+    kern_return_t kr;
+    io_iterator_t iterator = MACH_PORT_NULL;
+
+    // Create a matching dictionary for IOBlockStorageDriver services
+    CFMutableDictionaryRef matchingDict = IOServiceMatching("IOMedia");
+    if (!matchingDict) {
+        std::cerr << "Failed to create matching dictionary." << std::endl;
+        return devices;
+    }
+
+    // Get an iterator for the matching services
+    kr = IOServiceGetMatchingServices(kIOMasterPortDefault, matchingDict, &iterator);
+    if (kr != KERN_SUCCESS) {
+        std::cerr << "IOServiceGetMatchingServices failed: " << kr << std::endl;
+        CFRelease(matchingDict); // Remember to release if matching failed
+        return devices;
+    }
+    
+    IOOptionBits kIOOptionNone;
+    io_service_t service;
+    while ((service = IOIteratorNext(iterator))) {
+        CFMutableDictionaryRef serviceProperties;
+        kr = IORegistryEntryCreateCFProperties(service, &serviceProperties, kCFAllocatorDefault, kIOOptionNone);
+
+        if (kr == KERN_SUCCESS && serviceProperties) {
+            CFStringRef deviceName = (CFStringRef)CFDictionaryGetValue(serviceProperties, CFSTR("BSD Name"));
+            if (deviceName) {
+                char bsdName[128];
+                if (CFStringGetCString(deviceName, bsdName, sizeof(bsdName), kCFStringEncodingUTF8)) {
+                    std::cout << "Found storage device: " << bsdName << std::endl;
+                }
+            }
+
+            CFStringRef deviceVendor = (CFStringRef)CFDictionaryGetValue(serviceProperties, CFSTR("Device Vendor"));
+            if (deviceVendor) {
+                char vendorName[128];
+                if (CFStringGetCString(deviceVendor, vendorName, sizeof(vendorName), kCFStringEncodingUTF8)) {
+                    std::cout << "  Vendor: " << vendorName << std::endl;
+                }
+            }
+            
+            CFStringRef deviceModel = (CFStringRef)CFDictionaryGetValue(serviceProperties, CFSTR("Device Characteristics"));
+            if (deviceModel) {
+                CFDictionaryRef characteristicsDict = (CFDictionaryRef)CFDictionaryGetValue(serviceProperties, CFSTR("Device Characteristics"));
+                if (characteristicsDict) {
+                    CFStringRef modelString = (CFStringRef)CFDictionaryGetValue(characteristicsDict, CFSTR("Model"));
+                    if (modelString) {
+                        char modelName[256];
+                        if (CFStringGetCString(modelString, modelName, sizeof(modelName), kCFStringEncodingUTF8)) {
+                            std::cout << "  Model: " << modelName << std::endl;
+                        }
+                    }
+                }
+            }
+            
+            CFRelease(serviceProperties);
+        }
+        IOObjectRelease(service);
+    }
+
+    // Clean up
+    IOObjectRelease(iterator);
+    
+    return devices;
+}
+
+bool   getProperty(const CFDictionaryRef& properties, const char* key, std::string& value) {
+    // CFStringRef nameRef = (CFStringRef) CFDictionaryGetValue(properties, CFSTR("key"));
+    CFStringRef keyRef = CFStringCreateWithCString(
+            kCFAllocatorDefault,
+            key,
+            kCFStringEncodingUTF8
+        );
+    
+    CFStringRef nameRef = (CFStringRef) CFDictionaryGetValue(properties, keyRef);
+    if (nameRef) {
+        char buffer[1024];
+        // kCFStringEncodingUTF8
+        // kCFStringEncodingASCII
+        try {
+            if (CFStringGetCString(nameRef, buffer, sizeof(buffer), kCFStringEncodingUTF8)) {
+                value = buffer;
+                return true;
+            }
+        } catch (...) {
+        }
+    }
+    return false;
+}
+bool getProperty(const CFDictionaryRef& properties, const char* key, bool& value) {
+    // CFStringRef nameRef = (CFStringRef) CFDictionaryGetValue(properties, CFSTR("key"));
+    CFStringRef keyRef = CFStringCreateWithCString(
+            kCFAllocatorDefault,
+            key,
+            kCFStringEncodingUTF8
+        );
+    
+    CFBooleanRef nameRef = (CFBooleanRef) CFDictionaryGetValue(properties, keyRef);
+    if (nameRef) {
+        char buffer[1024];
+        try {
+            bool b = (bool)CFBooleanGetValue(nameRef);
+            value = b;
+            return true;
+        } catch (...) {
+        }
+    }
+    return false;
+}
+
+std::vector<StorageDevice> getStorageDevices1() {
+    std::vector<StorageDevice> devices;
+    kern_return_t kr;
+    io_iterator_t iterator;
+    io_service_t service;
+
+    CFMutableDictionaryRef matchingDict = IOServiceMatching("IOMedia");
+    if (!matchingDict) {
+        std::cerr << "Error: Could not create matching dictionary." << std::endl;
+        return devices;
+    }
+
+    kr = IOServiceGetMatchingServices(kIOMainPortDefault, matchingDict, &iterator);
+    if (kr != KERN_SUCCESS) {
+        std::cerr << "Error: IOServiceGetMatchingServices failed." << std::endl;
+        return devices;
+    }
+
+    while ((service = IOIteratorNext(iterator)) != IO_OBJECT_NULL) {
+        CFDictionaryRef properties;
+        IOOptionBits kIOOptionUnfiltered;
+        kr = IORegistryEntryCreateCFProperties(service, (CFMutableDictionaryRef *)&properties, kCFAllocatorDefault, kIOOptionUnfiltered);
+
+        if (kr == KERN_SUCCESS) {
+            StorageDevice storageDev;
+            
+            getProperty(properties, "BSD Name", storageDev.name);
+            getProperty(properties, "Open", storageDev.open);
+            getProperty(properties, "Writable", storageDev.writable);
+            getProperty(properties, "Removable", storageDev.removable);
+            getProperty(properties, "Device Vendor", storageDev.vendor) || getProperty(properties, "Vendor", storageDev.vendor);
+            
+            CFStringRef deviceModel = (CFStringRef)CFDictionaryGetValue(properties, CFSTR("Device Characteristics"));
+            if (deviceModel) {
+                CFDictionaryRef characteristicsDict = (CFDictionaryRef)CFDictionaryGetValue(properties, CFSTR("Device Characteristics"));
+                if (characteristicsDict) {
+                    CFStringRef modelString = (CFStringRef)CFDictionaryGetValue(characteristicsDict, CFSTR("Model"));
+                    if (modelString) {
+                        char modelName[256];
+                        if (CFStringGetCString(modelString, modelName, sizeof(modelName), kCFStringEncodingUTF8)) {
+                            std::cout << "  Model: " << modelName << std::endl;
+                        }
+                    }
+                }
+            }
+            CFNumberRef sizeRef = (CFNumberRef) CFDictionaryGetValue(properties, CFSTR("Size"));
+            if (sizeRef) {
+                long long size;
+                if (CFNumberGetValue(sizeRef, kCFNumberLongLongType, &size)) {
+                    storageDev.sizeBytes = size;
+                }
+            }
+
+            devices.push_back(storageDev);
+         
+            CFRelease(properties);
+        }
+        IOObjectRelease(service);
+    }
+    IOObjectRelease(iterator);
+
+    return devices;
+}
+
+// Function to print the device information
+void Storage::ListStorageSizes() {
+    std::vector<StorageDevice> devices = getStorageDevices1();
+    
+    if (devices.empty()) {
+        std::cout << "No storage devices found." << std::endl;
+        return;
+    }
+    std::cout << "Filesystem  Size GB  Open  Writable  Removable  Vendor" << std::endl;
+    std::cout << "----------  -------  ----  --------  --------- -----------------------" << std::endl;
+    for (const auto& device : devices) {
+        std::cout
+            << std::setw(10) << device.name
+            << std::setw(9) << (device.sizeBytes / (1024 * 1024 * 1024))
+            << std::setw(6) << device.open
+            << std::setw(10) << device.writable
+            << std::setw(11) << device.removable
+            << device.vendor << std::endl;
+    }
+    std::cout << std::endl;
+}
 #endif

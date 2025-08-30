@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		9AB236B82CF8D201007446E8 /* parseutil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9AB236B72CF8D201007446E8 /* parseutil.cpp */; };
+		9ADA1BE82E62818F000C58BC /* storage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9ADA1BE72E62818E000C58BC /* storage.cpp */; };
+		9ADA1BEB2E628BC3000C58BC /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9ADA1BEA2E628BC3000C58BC /* IOKit.framework */; };
+		9ADA1BED2E628BD2000C58BC /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9ADA1BEC2E628BD2000C58BC /* CoreFoundation.framework */; };
 		9AFA96002D11BDB0002F76BA /* signals.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9AFA95FF2D11BDB0002F76BA /* signals.cpp */; };
 		B9B44DD71D8F661700782398 /* directory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B9B44DCA1D8F661700782398 /* directory.cpp */; };
 		B9B44DD81D8F661700782398 /* lldu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B9B44DCE1D8F661700782398 /* lldu.cpp */; };
@@ -28,6 +31,10 @@
 /* Begin PBXFileReference section */
 		9AB236B62CF8D201007446E8 /* parseutil.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = parseutil.hpp; sourceTree = "<group>"; };
 		9AB236B72CF8D201007446E8 /* parseutil.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = parseutil.cpp; sourceTree = "<group>"; };
+		9ADA1BE62E62818E000C58BC /* storage.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = storage.hpp; sourceTree = "<group>"; };
+		9ADA1BE72E62818E000C58BC /* storage.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = storage.cpp; sourceTree = "<group>"; };
+		9ADA1BEA2E628BC3000C58BC /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
+		9ADA1BEC2E628BD2000C58BC /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		9AFA95FE2D11BDB0002F76BA /* signals.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = signals.hpp; sourceTree = "<group>"; };
 		9AFA95FF2D11BDB0002F76BA /* signals.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = signals.cpp; sourceTree = "<group>"; };
 		B9B44DBD1D8F65CD00782398 /* lldu */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = lldu; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -43,16 +50,28 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9ADA1BED2E628BD2000C58BC /* CoreFoundation.framework in Frameworks */,
+				9ADA1BEB2E628BC3000C58BC /* IOKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		9ADA1BE92E628BC3000C58BC /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				9ADA1BEC2E628BD2000C58BC /* CoreFoundation.framework */,
+				9ADA1BEA2E628BC3000C58BC /* IOKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		B9B44DB41D8F65CD00782398 = {
 			isa = PBXGroup;
 			children = (
 				B9B44DBF1D8F65CD00782398 /* lldu */,
+				9ADA1BE92E628BC3000C58BC /* Frameworks */,
 				B9B44DBE1D8F65CD00782398 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -68,6 +87,8 @@
 		B9B44DBF1D8F65CD00782398 /* lldu */ = {
 			isa = PBXGroup;
 			children = (
+				9ADA1BE62E62818E000C58BC /* storage.hpp */,
+				9ADA1BE72E62818E000C58BC /* storage.cpp */,
 				9AB236B62CF8D201007446E8 /* parseutil.hpp */,
 				9AB236B72CF8D201007446E8 /* parseutil.cpp */,
 				B9B44DCA1D8F661700782398 /* directory.cpp */,
@@ -141,6 +162,7 @@
 			files = (
 				9AB236B82CF8D201007446E8 /* parseutil.cpp in Sources */,
 				9AFA96002D11BDB0002F76BA /* signals.cpp in Sources */,
+				9ADA1BE82E62818F000C58BC /* storage.cpp in Sources */,
 				B9B44DD81D8F661700782398 /* lldu.cpp in Sources */,
 				B9B44DD71D8F661700782398 /* directory.cpp in Sources */,
 			);
@@ -261,6 +283,7 @@
 		B9B44DC51D8F65CD00782398 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = YES;
@@ -275,6 +298,7 @@
 		B9B44DC61D8F65CD00782398 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = YES;

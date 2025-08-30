@@ -70,6 +70,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = " -format=&quot;%12.12e\t%8c\t%10s\n&quot;"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-list"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

@@ -78,8 +78,9 @@ void Signals::init() {
 void sigHandler(int /* sig_t */ s) {
     Signals::aborted = true;
     std::cerr << "\nCaught signal \a " << std::endl;
-    if (Signals::abortCnt++ >= 2)
+    if (Signals::abortCnt >= 2)
         exit(-1);
+    Signals::abortCnt = Signals::abortCnt + 1;
 }
 
 //-------------------------------------------------------------------------------------------------
