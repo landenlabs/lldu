@@ -54,7 +54,7 @@
 
 #define _POSIX_C_SOURCE 200809L
 
-#define VERSION "v2.9"
+#define VERSION "v2.10"
 
 #ifdef HAVE_WIN
 #include <direct.h> // _getcwd
@@ -109,7 +109,8 @@ struct DuInfo {
     size_t diskSize;
     size_t fileSize;
     size_t hardlinks;
-    DuInfo() : count(0), diskSize(0), fileSize(0), hardlinks(0) {}
+    size_t softlinks;
+    DuInfo() : count(0), diskSize(0), fileSize(0), hardlinks(0), softlinks(0) {}
     DuInfo(std::string _str, size_t _count, size_t _diskSize, size_t _fileSize, size_t _links ) :
         ext(_str), count(_count), diskSize(_diskSize), fileSize(_fileSize), hardlinks(_links) {}
 };
@@ -142,7 +143,7 @@ std::string formatDef = "%8.8e\t%8c\t%15s\n";        // %s\t%8d\t%15d\n";
 std::string header = "     Ext\t   Count\t      Size\n";
 std::string tformat = formatDef;
 // std::string sformat = "%10S %n\n";
-std::string sformat = "%15s Files:%5c \t%n \n";
+std::string sformat = "%15s Files:%5c \t HardLinks:%3l\t%n \n";
 
 int setBothFmt = 0;
 time_t startT, prevT;
@@ -168,7 +169,8 @@ void clearProgress() {
 static
 bool ExamineFile(const lstring& filepath, const lstring& filename) {
     struct stat filestat;
-    if (stat(filepath, &filestat) != 0)
+    // Use lstat to avoid following the link to its target
+    if (lstat(filepath, &filestat) != 0)
         return false;
 
     lstring ext;
@@ -202,15 +204,21 @@ bool ExamineFile(const lstring& filepath, const lstring& filename) {
 
     if (filestat.st_nlink > 1)
         duInfo.hardlinks++;
-
-    if (duInfo.hardlinks > 1 && divByHardlink) {
-        duInfo.diskSize += diskSize / duInfo.hardlinks;
-        duInfo.fileSize += filestat.st_size / duInfo.hardlinks;
-    } else {
-        duInfo.diskSize += diskSize;
-        duInfo.fileSize += filestat.st_size;
+    if (S_ISLNK(filestat.st_mode))
+        duInfo.softlinks++;
+    else {
+        if (duInfo.hardlinks > 1 && divByHardlink) {
+            duInfo.diskSize += diskSize / duInfo.hardlinks;
+            duInfo.fileSize += filestat.st_size / duInfo.hardlinks;
+        } else {
+            duInfo.diskSize += diskSize;
+            duInfo.fileSize += filestat.st_size;
+        }
     }
-
+    
+    if (verbose) {
+        std::cout << "File:" << filepath << " DiskSize:" << diskSize << " FileSize:" << filestat.st_size << " HardLinks:" << filestat.st_nlink << std::endl;
+    }
     return true;
 }
 
@@ -229,7 +237,7 @@ size_t FindFile(const lstring& fullname) {
             && !ParseUtil::FileMatches(name, excludeFilePatList, false)
             && ParseUtil::FileMatches(name, includeFilePatList, true)) {
         if (ExamineFile(fullname, name)) {
-            fileCount++;
+            fileCount++;    // includes soft links (size is ignored for soft links)
             if (showFile)
                 std::cout << fullname << std::endl;
         } else {
@@ -281,7 +289,7 @@ size_t FindFiles(const lstring& dirname, unsigned depth) {
                 //    && ParseUtil::FileMatches(name, includeFilePatList, true) 
             ) {
                 if (verbose) {
-                    std::cout << fullname << std::endl;
+                    std::cout << "Dir:" << fullname << std::endl;
                 }
                 else if (std::difftime(endT, prevT) > 10) {
                     if (progress) {
@@ -373,7 +381,7 @@ void showHelp(const char* arg0) {
             "   -_y_format=<format-3-values>       ; Def: %8.8e\\t%8c\\t%15s\\n \n"
             "        e=ext, c=count, l=links, s=size, n=name\n"
             "   -_y_format=<format-3-values>       ; Second format for Total \n"
-            "   -_y_FormatSummary=<format-1-value> ; Summary Format, Def: \"%S %e\\n\" \n"
+            "   -_y_FormatSummary=<format-1-value> ; Summary Format, Def: \"%15s Files:%5c \\t%n\" \n"
             "   -_y_sort=ext|count|size            ; Def: ext \n"
             "   -_y_reverse=ext|count|size         ; Reverse sort \n"
             "   -_y_header=<header>                ; Def: Ext\\tCount\\tSize\\n \n"
@@ -424,7 +432,7 @@ void showHelp(const char* arg0) {
             "\n"
             " _p_Format:\n"
             "    uses standard printf formatting except for these special cases\n"
-            "    e=file extension, c=count, s=size, l=links \n"
+            "    e=file extension, c=count, s=size, l=links, n=name (with summary)\n"
             "    lowercase c,s,l  format with commas \n"
             "    uppercase  C,S,L  format without commas \n"
             "    precede with width, ex %12.12e\\t%8c\\t%15s\\n \n"

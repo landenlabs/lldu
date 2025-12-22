@@ -62,7 +62,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-summary"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-table=count"
@@ -74,7 +74,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-list"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "/Users/ldennis/android/wxapp/4100/WxApp/src/WxApp/TargetResources/ /Users/ldennis/android/wxapp/490/WxApp/src/WxApp/TargetResources/ /Users/ldennis/android/wxapp/5000/WxApp/src/WxApp/TargetResources/ /Users/ldennis/android/wxapp/5100/WxApp/src/WxApp/TargetResources/ /Users/ldennis/android/wxapp/5200/WxApp/src/WxApp/TargetResources/  /Users/ldennis/android/wxapp/5300/WxApp/src/WxApp/TargetResources/ /Users/ldennis/android/wxapp/5400/WxApp/src/WxApp/TargetResources/  /Users/ldennis/android/wxapp/main/WxApp/src/WxApp/TargetResources/"
@@ -114,6 +114,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "."
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "/Users/dennislang/.javacpp/cache/"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
