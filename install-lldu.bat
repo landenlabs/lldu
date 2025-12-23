@@ -10,7 +10,7 @@ if not exist "%dstdir%" (
 echo "msbuild=%msbuild%"
 if not exist "%msbuild%" (
 echo Default msbuild not defined or found at "%msbuild%"
-set msbuild=G:\opt\VisualStudio\2022\Preview\MSBuild\Current\Bin\MSBuild.exe
+set msbuild=G:\opt\VisualStudio\18\Community\MSBuild\Current\Bin\MSBuild.exe
 )
 
 cd %prog%-ms

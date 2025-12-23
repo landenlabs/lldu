@@ -60,6 +60,8 @@
 #include <direct.h> // _getcwd
 #define chdir _chdir
 #define getcwd _getcwd
+#define lstat stat
+#define S_ISLNK(a) false
 #else
 const size_t MAX_PATH = __DARWIN_MAXPATHLEN;
 #endif
