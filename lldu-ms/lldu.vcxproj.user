@@ -9,9 +9,9 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments>-sum g:\opt\software\cpp\dlang\all\_ll\llfile</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments> -sum -col=creat   f:\wallpaper\test f:\wallpaper\org</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArgumentsHistory>-sum g:\opt\software\cpp\dlang\all\_ll\llfile|</LocalDebuggerCommandArgumentsHistory>
+    <LocalDebuggerCommandArgumentsHistory>-sum g:\opt\software\cpp\dlang\all\_ll\llfile| -sum -table=count   f:\wallpaper\test f:\wallpaper\org| -sum -table=file   f:\wallpaper\test f:\wallpaper\org| -sum -col=creat   f:\wallpaper\test f:\wallpaper\org|</LocalDebuggerCommandArgumentsHistory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LocalDebuggerCommandArguments>-sum *</LocalDebuggerCommandArguments>

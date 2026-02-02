@@ -54,7 +54,7 @@
 
 #define _POSIX_C_SOURCE 200809L
 
-#define VERSION "v2.10"
+#define VERSION "v6.02" // 2026-Feb
 
 #ifdef HAVE_WIN
 #include <direct.h> // _getcwd
@@ -90,6 +90,9 @@ static StringList fileDirList;
 
 static lstring tableType = "count";
 static bool isTable = false;        // -table=count|size|hardlink
+
+static lstring isSideBySide;   // -colum=size|hardlink|access|modify|create
+static std::set<std::string> fileNameList;
 
 static bool showFile = false;
 static bool verbose = false;
@@ -146,11 +149,13 @@ std::string header = "     Ext\t   Count\t      Size\n";
 std::string tformat = formatDef;
 // std::string sformat = "%10S %n\n";
 std::string sformat = "%15s Files:%5c \t HardLinks:%3l\t%n \n";
+std::string cformat = "%15.15s\t";  // 1st column name format
 
 int setBothFmt = 0;
 time_t startT, prevT;
 
 // Forward declaration
+void printTime(time_t epoch, const char* fmtTm);
 void clearUsage();
 void printUsage(const std::string& filepath);
 void buildTable(const std::string& filepath);
@@ -250,6 +255,9 @@ size_t FindFile(const lstring& fullname) {
                 cerr << "Special characters or no permission to: " << fullname << std::endl;
             }
         }
+
+        if (isSideBySide)
+            fileNameList.insert(name);
     }
 
     return fileCount;
@@ -393,6 +401,9 @@ void showHelp(const char* arg0) {
             "   -_y_table=count|size|links         ; Present results in table \n"
             "   -_y_divide                         ; Divide size by hardlink count \n"
             "\n"
+            "   -_y_column=access|create|modify|size|link ; Side-by-size 2 or more dirs\n"
+            "   -_y_CFMT=%15.15s\\t               ; 1st col format name\n"
+            "\n"
             "   -_y_regex                       ; Use regex pattern not DOS pattern \n"
             "   NOTE - Default DOS pattern internally treats * at .*, . at [.] and ? at . \n "
             "          If using -_y_regex specify before pattern options\n"
@@ -484,6 +495,16 @@ int main(int argc, char* argv[]) {
                     if (cmd.length() > 2 && *cmdName == '-')
                         cmdName++;  // allow -- prefix on commands
                     switch (*cmdName) {
+                        case 'c':   // table=count|size|hardlinks|file
+                            if (parser.validOption("colum", cmdName)) {
+                                isSideBySide = value;
+                            }
+                            break;
+                        case 'C':  // CFMT cformat
+                            if (parser.validOption("cfmt", cmdName)) {
+                                cformat = ParseUtil::convertSpecialChar(value);
+                            }
+                            break;
                         case 'd': // depth=0..n
                             if (parser.validOption("depth", cmdName))  {
                                 maxDepth = atoi(value);
@@ -547,7 +568,7 @@ int main(int argc, char* argv[]) {
                                 includeDirPatList.push_back(pat);
                             } 
                             break;
-                        case 't':   // table=count|size|hardlinks
+                        case 't':   // table=count|size|hardlinks|file
                             if (parser.validOption("table", cmdName)) {
                                 tableType = value;
                                 isTable = true;
@@ -641,9 +662,58 @@ int main(int argc, char* argv[]) {
                         }
                         clearUsage();
                     }
+                    
                 }
 
-                if (isTable) {
+                if ( ! isSideBySide.empty()) {
+                    struct stat filestat;
+                    // std::sort(fileNameList.begin(), fileNameList.end());
+                    const char* cfmt = cformat.c_str();
+                    printf(cfmt, "Name");
+                    for (auto const& filePath : fileDirList) {
+                        int len = filePath.length();
+                        printf("%15.15s\t", filePath.c_str() + std::max(0, len-15));
+                    }
+                    printf("\n");
+                    for (auto const& name : fileNameList) {
+
+                        if (Signals::aborted)
+                            break;
+
+                        printf(cfmt, name.c_str());
+                        for (auto const& filePath : fileDirList) {
+                            string fullname = filePath + Directory_files::SLASH + name;
+                            // Use lstat to avoid following the link to its target
+                            if (lstat(fullname.c_str(), &filestat) == 0) {  
+                                // printf("%15d ", filestat.st_size);
+                                time_t tvalue;
+                                size_t value;
+                                switch (isSideBySide[0]) {
+                                default:value = filestat.st_size; break;
+                                case 'a': tvalue = filestat.st_atime; break; // access
+                                case 'c': tvalue = filestat.st_ctime; break; // create
+                                case 'm': tvalue = filestat.st_mtime; break; // modify
+                                case 's': value = filestat.st_size; break;
+                                case 'l': // links
+                                case 'h': value = filestat.st_nlink; break;
+                                }
+
+                                switch (isSideBySide[0]) {
+                                case 'a': 
+                                case 'c': 
+                                case 'm': 
+                                    printTime(tvalue, "%d-%b-%y %H:%M\t");
+                                    break;
+                                default:
+                                    printf("%15lu ", (unsigned long)value);
+                                }
+                            } else {
+                                printf("%15.15s\t", "--");
+                            }
+                        }
+                        printf("\n");
+                    }
+                } if (isTable) {
                     printTable();
                 } else {
                     printUsage(""); // print grand total
@@ -667,6 +737,15 @@ int main(int argc, char* argv[]) {
     }
     
     return 0;
+}
+
+
+void printTime(time_t epoch, const char* tmFmt) {
+    struct tm* localTm;
+    localTm = localtime(&epoch);
+    char timbuf[80];
+    strftime(timbuf, sizeof(timbuf), tmFmt, localTm);
+    printf(timbuf);
 }
 
 //-------------------------------------------------------------------------------------------------
