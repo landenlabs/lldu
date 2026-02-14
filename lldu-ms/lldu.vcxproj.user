@@ -9,9 +9,10 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments> -sum -col=creat   f:\wallpaper\test f:\wallpaper\org</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-col=creat -d=2  2025-dlang-2\finance_info\ 2025-dlang-3\finance_info\</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArgumentsHistory>-sum g:\opt\software\cpp\dlang\all\_ll\llfile| -sum -table=count   f:\wallpaper\test f:\wallpaper\org| -sum -table=file   f:\wallpaper\test f:\wallpaper\org| -sum -col=creat   f:\wallpaper\test f:\wallpaper\org|</LocalDebuggerCommandArgumentsHistory>
+    <LocalDebuggerCommandArgumentsHistory> -sum -table=count   f:\wallpaper\test f:\wallpaper\org| -sum -table=file   f:\wallpaper\test f:\wallpaper\org| -sum -col=creat   f:\wallpaper\test f:\wallpaper\org|-col=creat   2025-dlang-2\finance_info\ 2025-dlang-3\finance_info\|-col=creat -d=2  2025-dlang-2\finance_info\ 2025-dlang-3\finance_info\|</LocalDebuggerCommandArgumentsHistory>
+    <LocalDebuggerWorkingDirectory>E:\dlang-keep-backup</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LocalDebuggerCommandArguments>-sum *</LocalDebuggerCommandArguments>

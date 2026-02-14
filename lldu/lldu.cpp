@@ -233,7 +233,7 @@ bool ExamineFile(const lstring& filepath, const lstring& filename) {
 //-------------------------------------------------------------------------------------------------
 // Locate matching files which are not in exclude list.
 static
-size_t FindFile(const lstring& fullname) {
+size_t FindFile(const lstring& fullname, unsigned depth) {
     size_t fileCount = 0;
     lstring name;
     DirUtil::getName(name, fullname);
@@ -256,8 +256,22 @@ size_t FindFile(const lstring& fullname) {
             }
         }
 
-        if (isSideBySide)
-            fileNameList.insert(name);
+        if (isSideBySide) {
+            if (depth == 0)
+                fileNameList.insert(name);
+            else {
+                size_t off = fullname.length(); 
+                int dirParts = depth + 1;
+                while (dirParts-- > 0 && off != string::npos) {
+                    off = fullname.rfind(Directory_files::SLASH_CHAR, off-1);
+                }
+                if (off == string::npos) 
+                    fileNameList.insert(name);
+                else {
+                    fileNameList.insert(fullname.substr(off+1));
+                }
+            }
+        }
     }
 
     return fileCount;
@@ -275,7 +289,7 @@ size_t FindFiles(const lstring& dirname, unsigned depth) {
     struct stat filestat;
     try {
         if (stat(dirname, &filestat) == 0 && S_ISREG(filestat.st_mode)) {
-            fileCount += FindFile(dirname);
+            fileCount += FindFile(dirname, depth);
         }
     } catch (exception ex) {
         // Probably a pattern, let directory scan do its magic.
@@ -291,7 +305,11 @@ size_t FindFiles(const lstring& dirname, unsigned depth) {
         if (directory.is_directory()) {
             lstring name;
             DirUtil::getName(name, fullname);
-            if ((maxDepth == 0 || depth < maxDepth)
+
+            if (isSideBySide)
+                fileNameList.insert(name);
+
+            if ((maxDepth == 0 || depth+1 < maxDepth)
                     && (!dryrun || depth < 1)
                     && !ParseUtil::FileMatches(fullname, excludeDirPatList, false)
                 //    && ParseUtil::FileMatches(fullname, includeDirPatList, true) 
@@ -328,16 +346,18 @@ size_t FindFiles(const lstring& dirname, unsigned depth) {
                 }
 
                 if (showTotals || ParseUtil::FileMatches(fullname, summaryDirPatList, false)) {
-                    if (isTable) {
-                        buildTable(fullname);
-                    } else { /* if (!total) */
-                        printUsage(fullname);
+                    if (! isSideBySide) {
+                        if (isTable) {
+                            buildTable(fullname);
+                        } else { /* if (!total) */
+                            printUsage(fullname);
+                        }
                     }
                     clearUsage();
                 }
             }
         } else if (fullname.length() > 0) {
-            fileCount += FindFile(fullname);
+            fileCount += FindFile(fullname, depth);
         }
     }
 
@@ -442,6 +462,8 @@ void showHelp(const char* arg0) {
             "   lldu  -_y_ver -_y_Include='*/[.][a-zA-Z]*' ~/ \n"
             "\n Show hardlinks (%l or %L format) \n"
             "   lldu  -_y_header=\"   Exten\\tFileSize\\tLinks\\n\" -_y_format=\"%8.8e\\t%8s\\t%5L\\n\"  . \n"
+            "\n Side-by-side \n"
+            "   lldu  -_y_CFMT=\" % 25.25s\\t\"  -_y_col=size -d=2 dir1 dir2 \n"
             "\n"
             " _p_Format:\n"
             "    uses standard printf formatting except for these special cases\n"
@@ -495,9 +517,10 @@ int main(int argc, char* argv[]) {
                     if (cmd.length() > 2 && *cmdName == '-')
                         cmdName++;  // allow -- prefix on commands
                     switch (*cmdName) {
-                        case 'c':   // table=count|size|hardlinks|file
+                        case 'c':   // column=count|size|hardlinks|file
                             if (parser.validOption("colum", cmdName)) {
                                 isSideBySide = value;
+                                maxDepth = 1;
                             }
                             break;
                         case 'C':  // CFMT cformat
@@ -654,11 +677,13 @@ int main(int argc, char* argv[]) {
                     }
                 } else {
                     for (auto const& filePath : fileDirList) {
-                        FindFiles(filePath, 0);
-                        if (isTable) {
-                            buildTable(filePath);
-                        } else { /* if (!total) */
-                            printUsage(filePath);
+                        FindFiles(filePath, 0); 
+                        if (! isSideBySide) {
+                            if (isTable) {
+                                buildTable(filePath);
+                            } else { /* if (!total) */
+                                printUsage(filePath);
+                            }
                         }
                         clearUsage();
                     }
