@@ -54,7 +54,7 @@
 
 #define _POSIX_C_SOURCE 200809L
 
-#define VERSION "v6.02" // 2026-Feb
+#define VERSION "v6.02.21" // 2026-Feb-21
 
 #ifdef HAVE_WIN
 #include <direct.h> // _getcwd
@@ -678,7 +678,7 @@ int main(int argc, char* argv[]) {
                 } else {
                     for (auto const& filePath : fileDirList) {
                         FindFiles(filePath, 0); 
-                        if (! isSideBySide) {
+                        if (isSideBySide.empty()) {
                             if (isTable) {
                                 buildTable(filePath);
                             } else { /* if (!total) */

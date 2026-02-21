@@ -9,10 +9,10 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments>-col=creat -d=2  2025-dlang-2\finance_info\ 2025-dlang-3\finance_info\</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-sum g:\opt\taxes</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArgumentsHistory> -sum -table=count   f:\wallpaper\test f:\wallpaper\org| -sum -table=file   f:\wallpaper\test f:\wallpaper\org| -sum -col=creat   f:\wallpaper\test f:\wallpaper\org|-col=creat   2025-dlang-2\finance_info\ 2025-dlang-3\finance_info\|-col=creat -d=2  2025-dlang-2\finance_info\ 2025-dlang-3\finance_info\|</LocalDebuggerCommandArgumentsHistory>
-    <LocalDebuggerWorkingDirectory>E:\dlang-keep-backup</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerCommandArgumentsHistory> -sum -table=file   f:\wallpaper\test f:\wallpaper\org| -sum -col=creat   f:\wallpaper\test f:\wallpaper\org|-col=creat   2025-dlang-2\finance_info\ 2025-dlang-3\finance_info\|-col=creat -d=2  2025-dlang-2\finance_info\ 2025-dlang-3\finance_info\|-sum g:\opt\taxes|</LocalDebuggerCommandArgumentsHistory>
+    <LocalDebuggerWorkingDirectory> </LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LocalDebuggerCommandArguments>-sum *</LocalDebuggerCommandArguments>
