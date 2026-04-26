@@ -1,0 +1,6 @@
+total 8
+drwxr-xr-x@  5 dennislang  staff  - 160 Nov 20 20:06:00 2024 ./
+drwxr-xr-x@ 16 dennislang  staff  - 512 Nov 20 20:06:53 2024 ../
+-rwxr-xr--@  1 dennislang  staff  - 882 Nov 20 20:06:00 2024 test.csh*
+drwxr-xr-x@  9 dennislang  staff  - 288 Nov 21 08:51:45 2024 test1/
+drwxr-xr-x@  8 dennislang  staff  - 256 Nov 20 20:06:00 2024 test2/

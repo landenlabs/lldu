@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LocalDebuggerCommandArguments>-key=2642819 -compare I:\dlang\2016_lang\2005\2005_401k-xls.axx I:\dlang\2016_lang\2006\2005_401k-xls.axx</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LocalDebuggerCommandArguments>-key=2642819 -compare I:\dlang\2016_lang\2005\2005_401k-xls.axx I:\dlang\2016_lang\2006\2005_401k-xls.axx</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+</Project> Volume in drive C is OS
+ Volume Serial Number is 7EDF-70C0
+
+ Directory of c:\opt\projects\projects-c++\_ll\lldupdirs\test\test2
+
+04/14/2024  05:33 PM    <DIR>          .
+04/14/2024  05:29 PM    <DIR>          ..
+04/14/2024  05:33 PM    <DIR>          .vs
+04/14/2024  05:33 PM    <DIR>          lldupdir
+02/14/2021  08:41 PM             1,429 lldupdir.sln
+12/18/2021  06:57 PM             8,194 lldupdir.vcxproj
+03/04/2021  09:49 AM             2,314 lldupdir.vcxproj.filters
+05/01/2021  05:06 PM               805 lldupdir.vcxproj.user
+04/14/2024  06:17 PM    <DIR>          x64
+               4 File(s)         12,742 bytes
+               5 Dir(s)  598,924,627,968 bytes free

@@ -295,7 +295,7 @@ size_t FindFiles(const lstring& dirname, unsigned depth) {
         // Probably a pattern, let directory scan do its magic.
     }
 
-    bool showTotals = summary && (depth == 0) && (dirname.find('*') != string::npos);
+    bool showTotals = summary && (depth == 0); //  && (dirname.find('*') != string::npos);
 
     while (!Signals::aborted && directory.more()) {
         time_t endT;
@@ -352,7 +352,11 @@ size_t FindFiles(const lstring& dirname, unsigned depth) {
                         } else { /* if (!total) */
                             printUsage(fullname);
                         }
-                    }
+                    } 
+#ifdef HAVE_WIN
+                    else if (depth == 0)
+                        printUsage(fullname);
+#endif
                     clearUsage();
                 }
             }
@@ -677,7 +681,7 @@ int main(int argc, char* argv[]) {
                     }
                 } else {
                     for (auto const& filePath : fileDirList) {
-                        FindFiles(filePath, 0); 
+                        FindFiles(filePath, 0);
                         if (isSideBySide.empty()) {
                             if (isTable) {
                                 buildTable(filePath);

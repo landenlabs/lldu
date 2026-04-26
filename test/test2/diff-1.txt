@@ -1,0 +1,10 @@
+total 56
+drwxr-xr-x@ 9 dennislang  staff  -  288 Nov 21 08:51:45 2024 ./
+drwxr-xr-x@ 5 dennislang  staff  -  160 Nov 20 20:06:00 2024 ../
+-rw-r--r--  1 dennislang  staff  -  344 Nov 21 08:51:45 2024 diff-1.txt
+drwxr-xr-x@ 3 dennislang  staff  -   96 Nov 20 20:06:00 2024 dir1/
+drwxr-xr-x@ 2 dennislang  staff  -   64 Nov 20 20:06:00 2024 lldup/
+-rw-r--r--@ 1 dennislang  staff  - 1435 Nov 20 20:06:00 2024 lldup.sln
+-rw-r--r--@ 1 dennislang  staff  - 8242 Nov 20 20:06:00 2024 lldup.vcxproj
+-rw-r--r--@ 1 dennislang  staff  - 2359 Nov 20 20:06:00 2024 lldup.vcxproj.filters
+-rw-r--r--@ 1 dennislang  staff  -  805 Nov 20 20:06:00 2024 lldup.vcxproj.user
