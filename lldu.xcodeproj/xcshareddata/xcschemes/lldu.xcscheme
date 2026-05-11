@@ -35,8 +35,8 @@
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
-      useCustomWorkingDirectory = "NO"
-      customWorkingDirectory = "/Users/ldennis/projects/projects-xcode/lldu"
+      useCustomWorkingDirectory = "YES"
+      customWorkingDirectory = "/Users/dennislang/opt/projects/projects-xcode/_ll"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -118,6 +118,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "/Users/dennislang/.javacpp/cache/"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "lldu llreplace"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
