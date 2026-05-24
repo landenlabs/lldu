@@ -54,11 +54,7 @@
 
 #define _POSIX_C_SOURCE 200809L
 
-<<<<<<< Updated upstream
 #define VERSION "v6.05.05"
-=======
-#define VERSION "v6.05.10" // 2026-Feb
->>>>>>> Stashed changes
 
 #ifdef HAVE_WIN
 #include <direct.h> // _getcwd
