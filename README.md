@@ -3,7 +3,7 @@
     <td>
       <!-- VERSION -->v6.05.24<br>
       <!-- DATE -->24-May-2026<br>
-      macOS<br>
+      Win & MacOS<br>
       <a href="https://landenlabs.com">Home</a>
     </td>
     <td>
