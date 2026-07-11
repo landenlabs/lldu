@@ -19,18 +19,18 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\lldu\directory.cpp" />
+    <ClCompile Include="..\llcommon\directory.cpp" />
     <ClCompile Include="..\lldu\lldu.cpp" />
-    <ClCompile Include="..\lldu\parseutil.cpp" />
-    <ClCompile Include="..\lldu\signals.cpp" />
+    <ClCompile Include="..\llcommon\parseutil.cpp" />
+    <ClCompile Include="..\llcommon\signals.cpp" />
     <ClCompile Include="..\lldu\storage.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\lldu\directory.hpp" />
-    <ClInclude Include="..\lldu\ll_stdhdr.hpp" />
-    <ClInclude Include="..\lldu\lstring.hpp" />
-    <ClInclude Include="..\lldu\parseutil.hpp" />
-    <ClInclude Include="..\lldu\signals.hpp" />
+    <ClInclude Include="..\llcommon\directory.hpp" />
+    <ClInclude Include="..\llcommon\ll_stdhdr.hpp" />
+    <ClInclude Include="..\llcommon\lstring.hpp" />
+    <ClInclude Include="..\llcommon\parseutil.hpp" />
+    <ClInclude Include="..\llcommon\signals.hpp" />
     <ClInclude Include="..\lldu\storage.hpp" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
@@ -114,6 +114,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>..\llcommon;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -129,6 +130,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>..\llcommon;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -146,6 +148,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>..\llcommon;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -165,6 +168,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>..\llcommon;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

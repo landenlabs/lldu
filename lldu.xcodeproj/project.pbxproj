@@ -29,20 +29,20 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		9AB236B62CF8D201007446E8 /* parseutil.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = parseutil.hpp; sourceTree = "<group>"; };
-		9AB236B72CF8D201007446E8 /* parseutil.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = parseutil.cpp; sourceTree = "<group>"; };
+		9AB236B62CF8D201007446E8 /* parseutil.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ../llcommon/parseutil.hpp; sourceTree = "<group>"; };
+		9AB236B72CF8D201007446E8 /* parseutil.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ../llcommon/parseutil.cpp; sourceTree = "<group>"; };
 		9ADA1BE62E62818E000C58BC /* storage.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = storage.hpp; sourceTree = "<group>"; };
 		9ADA1BE72E62818E000C58BC /* storage.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = storage.cpp; sourceTree = "<group>"; };
 		9ADA1BEA2E628BC3000C58BC /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
 		9ADA1BEC2E628BD2000C58BC /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
-		9AFA95FE2D11BDB0002F76BA /* signals.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = signals.hpp; sourceTree = "<group>"; };
-		9AFA95FF2D11BDB0002F76BA /* signals.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = signals.cpp; sourceTree = "<group>"; };
+		9AFA95FE2D11BDB0002F76BA /* signals.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ../llcommon/signals.hpp; sourceTree = "<group>"; };
+		9AFA95FF2D11BDB0002F76BA /* signals.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ../llcommon/signals.cpp; sourceTree = "<group>"; };
 		B9B44DBD1D8F65CD00782398 /* lldu */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = lldu; sourceTree = BUILT_PRODUCTS_DIR; };
-		B9B44DCA1D8F661700782398 /* directory.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = directory.cpp; sourceTree = "<group>"; };
-		B9B44DCB1D8F661700782398 /* directory.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = directory.hpp; sourceTree = "<group>"; };
+		B9B44DCA1D8F661700782398 /* directory.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ../llcommon/directory.cpp; sourceTree = "<group>"; };
+		B9B44DCB1D8F661700782398 /* directory.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ../llcommon/directory.hpp; sourceTree = "<group>"; };
 		B9B44DCE1D8F661700782398 /* lldu.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = lldu.cpp; sourceTree = "<group>"; };
-		B9B44DD11D8F661700782398 /* ll_stdhdr.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ll_stdhdr.hpp; sourceTree = "<group>"; };
-		B9B44DD21D8F661700782398 /* lstring.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = lstring.hpp; sourceTree = "<group>"; };
+		B9B44DD11D8F661700782398 /* ll_stdhdr.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ../llcommon/ll_stdhdr.hpp; sourceTree = "<group>"; };
+		B9B44DD21D8F661700782398 /* lstring.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ../llcommon/lstring.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -288,6 +288,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = X7Z43FGG83;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../llcommon";
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.landenlabs.lldu;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -303,6 +304,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = X7Z43FGG83;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../llcommon";
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.landenlabs.lldu;
 				PRODUCT_NAME = "$(TARGET_NAME)";

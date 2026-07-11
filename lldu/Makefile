@@ -1,23 +1,23 @@
 CXX = clang++
-CXXFLAGS = -std=c++11
+CXXFLAGS = -std=c++17 -I../llcommon
 
-# define the C source files
-SRCS = lldu.cpp directory.cpp
+# define the C++ source files
+SRCS = lldu.cpp storage.cpp ../llcommon/directory.cpp ../llcommon/parseutil.cpp ../llcommon/signals.cpp
 
-OBJS = $(SRCS:.c=.o)
+OBJS = $(SRCS:.cpp=.o)
 
-# define the executable file 
+# define the executable file
 MAIN = lldu
 
 all: $(MAIN)
-      
-      
-$(MAIN): $(OBJS) 
-	$(CXX) $(CXXFLAGS) -o $(MAIN) $(OBJS) # $(LFLAGS) $(LIBS)
-  
+
+
+$(MAIN): $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $(MAIN) $(OBJS) -framework CoreFoundation -framework IOKit # $(LFLAGS) $(LIBS)
+
 
 clean:
-	rm -rf *.o* $(MAIN)
+	rm -rf *.o* ../llcommon/*.o $(MAIN)
 
 
 #depend: $(SRCS)
