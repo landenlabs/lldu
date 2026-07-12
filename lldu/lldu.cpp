@@ -54,7 +54,7 @@
 
 #define _POSIX_C_SOURCE 200809L
 
-#define VERSION "v6.05.25"
+#define VERSION "v6.07.10"
 
 #ifdef HAVE_WIN
 #include <direct.h> // _getcwd
