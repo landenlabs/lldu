@@ -225,7 +225,7 @@ int ListStorageDevicesNoAdmin() {
         }
         VariantClear(&vtProp);
         
-        long long totalSize, freeSize;
+        long long totalSize = 0, freeSize = 0;
 
         // Get the total size
         hr = pclsObj->Get(L"Size", 0, &vtProp, 0, 0);
@@ -635,7 +635,7 @@ std::vector<StorageDevice> getStorageDevicesWithAdmin() {
                     devices.push_back({devicePath, friendlyName, className, compatibleIds, devDescription, enumName, uiNumberStr, ( unsigned long long )diskGeometry.DiskSize.QuadPart});
                 } else {
                     std::cerr << "Failed to get disk geometry. Error: " << GetLastError() << std::endl;
-                    devices.push_back({devicePath, friendlyName, 0});
+                    devices.push_back({devicePath, friendlyName, className, compatibleIds, devDescription, enumName, uiNumberStr, 0});
                 }
                 CloseHandle(hDevice);
             } else {
@@ -686,6 +686,15 @@ void Storage::ListStorageSizes() {
 #endif
 
 #ifdef __linux__
+#include <dirent.h>
+
+// Scoped to this #ifdef __linux__ branch only - distinct from the StorageDevice
+// structs defined in the (mutually exclusive) HAVE_WIN/HAVE_LINUX2/Apple branches.
+struct StorageDevice {
+    std::string name;
+    unsigned long long sizeBytes;
+};
+
 std::vector<StorageDevice> getStorageDevices() {
     std::vector<StorageDevice> devices;
     DIR *dir;
@@ -703,7 +712,7 @@ std::vector<StorageDevice> getStorageDevices() {
             if (fp) {
                 long long blocks;
                 if (fscanf(fp, "%lld", &blocks) == 1) {
-                    devices.push_back({name, blocks * 512});
+                    devices.push_back({name, (unsigned long long)(blocks * 512)});
                 }
                 fclose(fp);
             }
@@ -713,6 +722,19 @@ std::vector<StorageDevice> getStorageDevices() {
         std::cerr << "Error: Could not open /sys/block." << std::endl;
     }
     return devices;
+}
+
+void Storage::ListStorageSizes() {
+    auto devices = getStorageDevices();
+    if (devices.empty()) {
+        std::cout << "No storage devices found." << std::endl;
+    } else {
+        std::cout << "Available Storage Devices:" << std::endl;
+        for (const auto& dev : devices) {
+            std::cout << "Path: " << dev.name << std::endl;
+            std::cout << "Size: " << (dev.sizeBytes / (1024.0 * 1024.0 * 1024.0)) << " GB" << std::endl;
+        }
+    }
 }
 #endif
 
@@ -827,8 +849,8 @@ struct StorageDevice {
     std::string name;
     std::string vendor;
     std::string model;
-    bool open, writable, removable;
-    long long sizeBytes;
+    bool open = false, writable = false, removable = false;
+    long long sizeBytes = 0;
 };
 
 
@@ -852,7 +874,7 @@ std::vector<StorageDevice> getStorageDevices() {
         return devices;
     }
     
-    IOOptionBits kIOOptionNone;
+    IOOptionBits kIOOptionNone = 0;
     io_service_t service;
     while ((service = IOIteratorNext(iterator))) {
         CFMutableDictionaryRef serviceProperties;
@@ -964,7 +986,7 @@ std::vector<StorageDevice> getStorageDevices1() {
 
     while ((service = IOIteratorNext(iterator)) != IO_OBJECT_NULL) {
         CFDictionaryRef properties;
-        IOOptionBits kIOOptionUnfiltered;
+        IOOptionBits kIOOptionUnfiltered = 0;
         kr = IORegistryEntryCreateCFProperties(service, (CFMutableDictionaryRef *)&properties, kCFAllocatorDefault, kIOOptionUnfiltered);
 
         if (kr == KERN_SUCCESS) {

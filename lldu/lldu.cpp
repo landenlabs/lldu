@@ -63,7 +63,8 @@
 #define lstat stat
 #define S_ISLNK(a) false
 #else
-const size_t MAX_PATH = __DARWIN_MAXPATHLEN;
+#include <climits>   // PATH_MAX - portable across macOS and Linux, unlike the Apple-only __DARWIN_MAXPATHLEN
+const size_t MAX_PATH = PATH_MAX;
 #endif
 
 using namespace std;
@@ -214,9 +215,9 @@ bool ExamineFile(const lstring& filepath, const lstring& filename) {
     if (S_ISLNK(filestat.st_mode))
         duInfo.softlinks++;
     else {
-        if (duInfo.hardlinks > 1 && divByHardlink) {
-            duInfo.diskSize += diskSize / duInfo.hardlinks;
-            duInfo.fileSize += filestat.st_size / duInfo.hardlinks;
+        if (filestat.st_nlink > 1 && divByHardlink) {
+            duInfo.diskSize += diskSize / filestat.st_nlink;
+            duInfo.fileSize += filestat.st_size / filestat.st_nlink;
         } else {
             duInfo.diskSize += diskSize;
             duInfo.fileSize += filestat.st_size;
@@ -1060,9 +1061,7 @@ void buildTable(const std::string& filepath) {
 
 void printTable() {
     printf("Table of %s\n", tableType.c_str());
-    size_t* totals = new size_t[filePaths.size()];
-    for (size_t col = 0; col < filePaths.size(); col++)
-        totals[col] = 0;
+    std::vector<size_t> totals(filePaths.size(), 0);
 
     // Print merged table
     for (const auto & duItem : tableList) {
