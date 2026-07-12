@@ -849,7 +849,10 @@ struct StorageDevice {
     std::string name;
     std::string vendor;
     std::string model;
-    bool open = false, writable = false, removable = false;
+    std::string className;  // IOKit class, e.g. IOMedia, AppleAPFSMedia, AppleAPFSVolume, AppleAPFSSnapshot
+    std::string kind;       // human-readable classification derived from className + whole
+    std::string parent;     // BSD name of the device this one is layered on top of, if any
+    bool open = false, writable = false, removable = false, whole = false, physical = false;
     long long sizeBytes = 0;
 };
 
@@ -966,6 +969,60 @@ bool getProperty(const CFDictionaryRef& properties, const char* key, bool& value
     return false;
 }
 
+// IOKit's registry service plane always models raw physical media (whole disks
+// and their partitions) as class "IOMedia". Anything synthesized on top of that
+// (an APFS container, an APFS volume, an APFS snapshot, CoreStorage/RAID, etc.)
+// shows up as a different subclass layered above it. Walking up the service
+// plane from such a node to the nearest ancestor that exposes a "BSD Name"
+// finds what it's actually backed by - e.g. an APFS container's physical store
+// partition, or a volume's container.
+std::string getParentBSDName(io_service_t service) {
+    io_registry_entry_t current = service;
+    io_registry_entry_t parent = MACH_PORT_NULL;
+    bool ownsCurrent = false;
+    std::string result;
+
+    while (IORegistryEntryGetParentEntry(current, kIOServicePlane, &parent) == KERN_SUCCESS) {
+        if (ownsCurrent) {
+            IOObjectRelease(current);
+        }
+        current = parent;
+        ownsCurrent = true;
+
+        CFMutableDictionaryRef parentProperties = nullptr;
+        if (IORegistryEntryCreateCFProperties(current, &parentProperties, kCFAllocatorDefault, 0) == KERN_SUCCESS && parentProperties) {
+            std::string bsdName;
+            bool found = getProperty(parentProperties, "BSD Name", bsdName);
+            CFRelease(parentProperties);
+            if (found) {
+                result = bsdName;
+                break;
+            }
+        }
+    }
+
+    if (ownsCurrent) {
+        IOObjectRelease(current);
+    }
+    return result;
+}
+
+std::string classifyKind(const std::string& className, bool whole) {
+    if (className == "IOMedia") {
+        return whole ? "Disk" : "Partition";
+    }
+    if (className == "AppleAPFSMedia") {
+        return "APFS Container";
+    }
+    if (className == "AppleAPFSVolume") {
+        return "APFS Volume";
+    }
+    if (className == "AppleAPFSSnapshot") {
+        return "APFS Snapshot";
+    }
+    return className.empty() ? "Unknown" : className;
+}
+
 std::vector<StorageDevice> getStorageDevices1() {
     std::vector<StorageDevice> devices;
     kern_return_t kr;
@@ -996,8 +1053,17 @@ std::vector<StorageDevice> getStorageDevices1() {
             getProperty(properties, "Open", storageDev.open);
             getProperty(properties, "Writable", storageDev.writable);
             getProperty(properties, "Removable", storageDev.removable);
+            getProperty(properties, "Whole", storageDev.whole);
             getProperty(properties, "Device Vendor", storageDev.vendor) || getProperty(properties, "Vendor", storageDev.vendor);
-            
+
+            io_name_t classNameBuf;
+            if (IOObjectGetClass(service, classNameBuf) == KERN_SUCCESS) {
+                storageDev.className = classNameBuf;
+            }
+            storageDev.physical = (storageDev.className == "IOMedia");
+            storageDev.kind = classifyKind(storageDev.className, storageDev.whole);
+            storageDev.parent = getParentBSDName(service);
+
             CFStringRef deviceModel = (CFStringRef)CFDictionaryGetValue(properties, CFSTR("Device Characteristics"));
             if (deviceModel) {
                 CFDictionaryRef characteristicsDict = (CFDictionaryRef)CFDictionaryGetValue(properties, CFSTR("Device Characteristics"));
@@ -1038,8 +1104,8 @@ void Storage::ListStorageSizes() {
         std::cout << "No storage devices found." << std::endl;
         return;
     }
-    std::cout << "Filesystem  Size GB  Open  Writable  Removable  Vendor" << std::endl;
-    std::cout << "----------  -------  ----  --------  --------- -----------------------" << std::endl;
+    std::cout << "Filesystem  Size GB  Open  Writable  Removable  Physical  Type            Parent      Vendor" << std::endl;
+    std::cout << "----------  -------  ----  --------  ---------  --------  --------------  ----------  -----------------------" << std::endl;
     for (const auto& device : devices) {
         std::cout
             << std::setw(10) << device.name
@@ -1047,7 +1113,10 @@ void Storage::ListStorageSizes() {
             << std::setw(6) << device.open
             << std::setw(10) << device.writable
             << std::setw(11) << device.removable
-            << device.vendor << std::endl;
+            << std::setw(10) << (device.physical ? "Yes" : "No")
+            << "  " << std::left << std::setw(14) << device.kind << std::right
+            << std::setw(12) << device.parent
+            << "  " << device.vendor << std::endl;
     }
     std::cout << std::endl;
 }
