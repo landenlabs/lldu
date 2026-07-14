@@ -14,7 +14,6 @@
 #ifdef HAVE_WIN
 #define byte win_byte_override  // Fix for c++ v17
 #include <windows.h>
-#undef byte                     // Fix for c++ v17
 #include <winioctl.h>
 
 
@@ -24,6 +23,7 @@
 
 #include <Wbemidl.h> // For WMI
 #include <comdef.h>  // For _bstr_t
+#undef byte                     // Fix for c++ v17
 
 #pragma comment(lib, "wbemuuid.lib")
 #pragma comment(lib, "setupapi.lib")
