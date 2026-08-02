@@ -296,7 +296,7 @@ size_t FindFiles(const lstring& dirname, unsigned depth) {
         // Probably a pattern, let directory scan do its magic.
     }
 
-    bool showTotals = summary && (depth == 0); //  && (dirname.find('*') != string::npos);
+    bool showTotals = summary && (depth == 0) && (dirname.find('*') != string::npos);
 
     while (!Signals::aborted && directory.more()) {
         time_t endT;
@@ -347,7 +347,7 @@ size_t FindFiles(const lstring& dirname, unsigned depth) {
                 }
 
                 if (showTotals || ParseUtil::FileMatches(fullname, summaryDirPatList, false)) {
-                    if (! isSideBySide) {
+                    if (isSideBySide.empty()) {
                         if (isTable) {
                             buildTable(fullname);
                         } else { /* if (!total) */
