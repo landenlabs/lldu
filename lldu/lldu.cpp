@@ -51,6 +51,7 @@
 #include <algorithm>
 #include <regex>
 #include <exception>
+#include <utility>
 
 #define _POSIX_C_SOURCE 200809L
 
@@ -98,6 +99,8 @@ static std::set<std::string> fileNameList;
 static bool showFile = false;
 static bool verbose = false;
 static unsigned maxDepth = 0;
+static bool showTree = false;       // -tree[=depth]  or  -tree <depth>
+static unsigned treeDepth = 3;      // default tree depth
 static bool summary = false;
 static bool showAbsPath = false;    // -absolute = show absolute path. 
 static bool total = false;
@@ -161,6 +164,7 @@ void clearUsage();
 void printUsage(const std::string& filepath);
 void buildTable(const std::string& filepath);
 void printTable();
+void printDirTree(const std::string& rootPath, unsigned maxTreeDepth);
 
 static char CWD_BUF[MAX_PATH];
 static unsigned CWD_LEN = 0;
@@ -370,6 +374,119 @@ size_t FindFiles(const lstring& dirname, unsigned depth) {
 }
 
 //-------------------------------------------------------------------------------------------------
+// Tree view (-tree[=depth] or -tree <depth>) support.
+struct TreeStats {
+    size_t count = 0;
+    size_t size = 0;
+};
+
+struct TreeNode {
+    std::string line;
+    std::vector<TreeNode> children;
+    TreeStats total;    // own + all descendants, regardless of print depth
+};
+
+// Same file filtering rules used by FindFile() for a plain (non-directory) entry.
+static
+bool TreeFileMatch(const lstring& fullname, const lstring& name) {
+    return !ParseUtil::FileMatches(fullname, excludeDirPatList, false)
+        && ParseUtil::FileMatches(fullname, includeDirPatList, true)
+        && !ParseUtil::FileMatches(name, excludeFilePatList, false)
+        && ParseUtil::FileMatches(name, includeFilePatList, true);
+}
+
+static
+std::string FormatTreeLine(const lstring& name, const TreeStats& own, const TreeStats& total, bool hasSubdirs) {
+    char buf[512];
+    if (hasSubdirs) {
+        snprintf(buf, sizeof(buf), "%s   Files:%zu  Size:%zu   " YELLOW "[Total Files:%zu  Size:%zu]" OFF,
+            name.c_str(), own.count, own.size, total.count, total.size);
+    } else {
+        snprintf(buf, sizeof(buf), "%s   Files:%zu  Size:%zu",
+            name.c_str(), own.count, own.size);
+    }
+    return buf;
+}
+
+// Recurse the full subtree (so totals are always correct) but only keep child
+// nodes to print while depth+1 < maxTreeDepth.
+static
+TreeNode BuildTree(const lstring& dirPath, unsigned depth, unsigned maxTreeDepth) {
+    TreeNode node;
+    if (depth >= MAX_DIR_DEPTH) {
+        std::cerr << "Exceeded max directory depth " << MAX_DIR_DEPTH << std::endl;
+        std::cerr << dirPath << std::endl;
+        return node;
+    }
+
+    Directory_files directory(dirPath);
+    lstring fullname;
+    TreeStats own;
+    std::vector<lstring> subdirs;
+
+    while (!Signals::aborted && directory.more()) {
+        directory.fullName(fullname);
+        lstring name;
+        DirUtil::getName(name, fullname);
+
+        if (directory.is_directory()) {
+            if (!ParseUtil::FileMatches(fullname, excludeDirPatList, false)
+                    && !ParseUtil::FileMatches(name, excludeFilePatList, false)) {
+                subdirs.push_back(fullname);
+            }
+        } else if (fullname.length() > 0) {
+            if (TreeFileMatch(fullname, name)) {
+                struct stat filestat;
+                if (lstat(fullname, &filestat) == 0) {
+                    own.count++;
+                    own.size += (size_t)filestat.st_size;
+                }
+            }
+        }
+    }
+
+    std::sort(subdirs.begin(), subdirs.end());
+
+    TreeStats total = own;
+    bool printChildren = (depth + 1 < maxTreeDepth);
+    for (const auto& subdir : subdirs) {
+        TreeNode child = BuildTree(subdir, depth + 1, maxTreeDepth);
+        total.count += child.total.count;
+        total.size += child.total.size;
+        if (printChildren)
+            node.children.push_back(std::move(child));
+    }
+
+    lstring name;
+    DirUtil::getName(name, dirPath);
+    node.total = total;
+    node.line = FormatTreeLine(name.empty() ? dirPath : name, own, total, !subdirs.empty());
+    return node;
+}
+
+static
+void PrintTreeNode(const TreeNode& node, const std::string& prefix, bool isLast, bool isRoot) {
+    if (isRoot) {
+        std::cout << node.line << "\n";
+    } else {
+        std::cout << prefix << GREEN "+-- " OFF << node.line << "\n";
+    }
+
+    std::string childPrefix = prefix + (isRoot ? "" : (isLast ? "    " : GREEN "|" OFF "   "));
+    for (size_t idx = 0; idx < node.children.size(); idx++) {
+        PrintTreeNode(node.children[idx], childPrefix, idx + 1 == node.children.size(), false);
+    }
+}
+
+void printDirTree(const std::string& rootPath, unsigned maxTreeDepth) {
+    if (maxTreeDepth == 0)
+        maxTreeDepth = 1;
+    Colors::colorize("");  // Enable ANSI escape processing on Windows console
+    TreeNode root = BuildTree(rootPath, 0, maxTreeDepth);
+    PrintTreeNode(root, "", true, true);
+}
+
+//-------------------------------------------------------------------------------------------------
 // replace=<fromPat>;<toText>
 static
 void addPicker(const char* replaceArg) {
@@ -424,6 +541,8 @@ void showHelp(const char* arg0) {
             "   -_y_summary                        ; Single row for each path \n"
             "   -_y_summary=<dirPat>               ; Sumarize matching dirs \n"
             "   -_y_table=count|size|links         ; Present results in table \n"
+            "   -_y_tree <depth>  or  -_y_tree=<depth>  ; Show directory tree, file count & size \n"
+            "                                       ; per level, Def depth=3 \n"
             "   -_y_divide                         ; Divide size by hardlink count \n"
             "\n"
             "   -_y_column=access|create|modify|size|link ; Side-by-size 2 or more dirs\n"
@@ -442,6 +561,7 @@ void showHelp(const char* arg0) {
             "    -_y_list                          ; List devices & storage size "
             "\n\n"
             " _p_Example:\n"
+            "   lldu  -_y_tree 5 some-directory    ; Tree view, 5 levels deep \n"
             "   lldu  -_y_sum -_y_Exc=*.git  * \n"
 #ifdef HAVE_WIN
             "   lldu  -_y_sum -_y_Exc=*\\\\.git  * \n"
@@ -596,10 +716,13 @@ int main(int argc, char* argv[]) {
                                 includeDirPatList.push_back(pat);
                             } 
                             break;
-                        case 't':   // table=count|size|hardlinks|file
-                            if (parser.validOption("table", cmdName)) {
+                        case 't':   // table=count|size|hardlinks|file ; tree=<depth>
+                            if (parser.validOption("table", cmdName, false)) {
                                 tableType = value;
                                 isTable = true;
+                            } else if (parser.validOption("tree", cmdName)) {
+                                showTree = true;
+                                treeDepth = atoi(value) > 0 ? atoi(value) : 3;
                             }
                             break;
                         default:
@@ -638,8 +761,20 @@ int main(int argc, char* argv[]) {
                     case 's':   // -summary
                         summary = parser.validOption("summary", cmdName);
                         break;
-                    case 't':   // -total
-                        total = parser.validOption("total", cmdName);
+                    case 't':   // -total ; -tree or -tree <depth>
+                        if (parser.validOption("total", cmdName, false)) {
+                            total = true;
+                        } else if (parser.validOption("tree", cmdName)) {
+                            showTree = true;
+                            if (argn + 1 < argc) {
+                                char* endPtr = nullptr;
+                                long depthArg = strtol(argv[argn + 1], &endPtr, 10);
+                                if (endPtr != argv[argn + 1] && *endPtr == '\0' && depthArg > 0) {
+                                    treeDepth = (unsigned)depthArg;
+                                    argn++;     // consume depth argument
+                                }
+                            }
+                        }
                         break;
                     case 'v':   // -v=true or -v=anyThing
                         verbose = parser.validOption("verbose", cmdName);
@@ -669,6 +804,12 @@ int main(int argc, char* argv[]) {
         if (parser.patternErrCnt == 0 && parser.optionErrCnt == 0) {
             if (listDev) {
                 Storage::ListStorageSizes();
+            } else if (showTree) {
+                for (auto const& filePath : fileDirList) {
+                    if (Signals::aborted)
+                        break;
+                    printDirTree(filePath, treeDepth);
+                }
             } else if (fileDirList.size() != 0) {
                 ParseUtil::fmtDateTime(timeStr, startT);
                 prevT = startT;
