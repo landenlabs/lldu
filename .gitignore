@@ -20,10 +20,12 @@ lib/
 *.pdb
 *.lib
 *.aps
-*.user  # project.vcxproj.user
+# project.vcxproj.user
+*.user
 
 # Compiled objects
 *.o
+.derived-data-log*
 
 # Compiled binary
 /lldu/lldu
