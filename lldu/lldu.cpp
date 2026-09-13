@@ -55,7 +55,7 @@
 
 #define _POSIX_C_SOURCE 200809L
 
-#define VERSION "v6.08.01"
+#define VERSION "v6.09.10"
 
 #ifdef HAVE_WIN
 #include <direct.h> // _getcwd
@@ -211,7 +211,7 @@ bool ExamineFile(const lstring& filepath, const lstring& filename) {
 #ifdef HAVE_WIN
     size_t diskSize = filestat.st_size;    // filestat.st_size;
 #else
-    size_t diskSize = filestat.st_blocks * filestat.st_blksize;
+    size_t diskSize = filestat.st_blocks * 512;    // st_blocks is always in 512-byte units, per POSIX
 #endif
 
     if (filestat.st_nlink > 1)
@@ -1167,9 +1167,9 @@ void printUsage(const std::string& filepath) {
     } else {
         if (tformat.length() > 0) {
             if (filepath.empty())
-                printParts(tformat.c_str(), "_GTotal", gtotalCount, gtotalLinks, gtotalFileSize);
+                printParts(tformat.c_str(), "_GTotal", gtotalCount, gtotalLinks, gtotalDiskSize);
             else
-                printParts(tformat.c_str(), "_Total", totalCount, totalLinks, totalFileSize);
+                printParts(tformat.c_str(), "_Total", totalCount, totalLinks, totalDiskSize);
         } else {
             // std::cout << iter->first << separator << iter->second.count << separator << iter->second.diskSize << std::endl;
         }
